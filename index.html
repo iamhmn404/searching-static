@@ -13,27 +13,21 @@ html,body{
   display:flex;align-items:center;justify-content:center;overflow:hidden;
 }
 
-/* ===== STRONG CRT + STATIC (much brighter than before) ===== */
+/* ===== STRONG CRT + STATIC ===== */
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-  /* horizontal scan-lines + vertical scan + film vignette */
   background:
-    /* horizontal scanlines */
     repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,.14) 2px 3px),
-    /* vertical scanlines */
     repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 3px),
-    /* soft vignette */
     radial-gradient(rgba(255,255,255,.07), transparent 65%);
   mix-blend-mode:overlay;
   opacity:.9;
   animation:crtJitter .9s steps(8,end) infinite;
 }
-/* animated “grain” layer */
 body::after{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
     radial-gradient(transparent 40%, rgba(0,0,0,.35) 70%),
-    /* dither noise via multiple tiny gradients */
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 1px, transparent 1px 2px),
     repeating-linear-gradient(-45deg, rgba(255,255,255,.04) 0 1px, transparent 1px 2px);
   opacity:.35;
@@ -53,19 +47,21 @@ body::after{
 
 /* ===== LAYOUT ===== */
 .wrap{display:grid;gap:28px;place-items:center;width:min(90vw,780px);z-index:1;}
-pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;
-white-space:pre-wrap;max-width:64ch;}
+pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;white-space:pre-wrap;max-width:64ch;}
 .cursor{display:inline-block;width:.65ch;}
 .blink{animation:blink .55s step-end infinite;}
 @keyframes blink{50%{opacity:0;}}
+/* Blink only for “march 2026” text */
+.blink-2026{animation:twinkle .8s step-end infinite;}
+@keyframes twinkle{50%{opacity:0;}}
 
-/* ===== USB IMAGE ===== */
+/* ===== USB ===== */
 .usb{
   --usb:url('usb.png');
   position:relative;
   width:min(78vw,500px);
   aspect-ratio:16/9;
-  opacity:0;                 /* fade-in on start */
+  opacity:0;                 /* fades in on start */
   filter:contrast(130%) brightness(102%);
   transition:opacity 2s ease-in;
 }
@@ -106,19 +102,13 @@ white-space:pre-wrap;max-width:64ch;}
   50%,100%{opacity:0;transform:none}
 }
 
-/* ===== LIGHTNING INTERFERENCE EFFECT ===== */
+/* ===== LIGHTNING INTERFERENCE ===== */
 .lightning body::before, .lightning body::after { opacity:1 !important; }
-.flash {
-  position:fixed;inset:0;pointer-events:none;z-index:2;
+.flash{position:fixed;inset:0;pointer-events:none;z-index:2;
   background:radial-gradient(rgba(255,255,255,.9), rgba(255,255,255,.0) 60%);
-  opacity:0;mix-blend-mode:screen;
-}
-.flash.active{ animation:flashPop .18s ease-out 1; }
-@keyframes flashPop{
-  0%{opacity:0}
-  10%{opacity:1}
-  100%{opacity:0}
-}
+  opacity:0;mix-blend-mode:screen;}
+.flash.active{animation:flashPop .18s ease-out 1;}
+@keyframes flashPop{0%{opacity:0}10%{opacity:1}100%{opacity:0}}
 
 /* Reduced motion */
 @media(prefers-reduced-motion:reduce){
@@ -152,7 +142,7 @@ const out=document.getElementById("out");
 const usb=document.getElementById("usb");
 const flash=document.getElementById("flash");
 
-function typeLine(text,{speed=50,pauseAfter=0}={}) {
+function typeLine(text,{speed=65,pauseAfter=0}={}) {
   return new Promise(res=>{
     let i=0;
     const line=document.createElement("div");
@@ -168,7 +158,7 @@ function typeLine(text,{speed=50,pauseAfter=0}={}) {
   });
 }
 
-/* USB flicker (edge flashes) */
+/* USB edge flicker (continuous after startup) */
 function startUsbFlicker(){
   usb.classList.add("glow");
   usb.style.opacity="1"; // smooth fade-in
@@ -177,30 +167,25 @@ function startUsbFlicker(){
   document.head.appendChild(style);
   const flashEdge=()=>{usb.classList.add("edge-flash");
     setTimeout(()=>usb.classList.remove("edge-flash"),350);};
-  // continuous flashes every 0.4–1.2s with 2–4 hits
   (function loop(){
-    const t=400+Math.random()*800;
+    const t=400+Math.random()*800; // 0.4–1.2 s
     setTimeout(()=>{
-      const n=2+Math.floor(Math.random()*3);
+      const n=2+Math.floor(Math.random()*3); // 2–4 hits
       for(let i=0;i<n;i++)setTimeout(flashEdge,i*70+Math.random()*50);
       loop();
     },t);
   })();
 }
 
-/* Lightning interference: bright screen pop + heavier background */
+/* Lightning interference bursts */
 function lightningBurst(){
-  // quick white pop
   flash.classList.add('active');
   setTimeout(()=>flash.classList.remove('active'), 200);
-
-  // briefly intensify scanlines/static by toggling a class on <html>
   document.documentElement.classList.add('lightning');
   setTimeout(()=>document.documentElement.classList.remove('lightning'), 220);
 }
 function scheduleLightning(){
   (function loop(){
-    // fire roughly 3–6 times per minute, irregular
     const t = 6000 + Math.random()*10000; // 6–16s
     setTimeout(()=>{
       const bursts = 1 + Math.floor(Math.random()*2); // 1–2 chained
@@ -213,7 +198,7 @@ function scheduleLightning(){
 }
 
 (async function run(){
-  // one “searching static …” line that BLINKS for 2.5 s (no duplicate)
+  // one “searching static …” line that blinks for 2.5 s
   const line=document.createElement("div");
   line.textContent="> searching static ...";
   out.appendChild(line);
@@ -222,10 +207,21 @@ function scheduleLightning(){
   await new Promise(r=>setTimeout(r,2500));
   clearInterval(blinkTimer);
   line.style.visibility="visible";
-  // then type the rest
-  for(let i=0;i<LINES.length;i++)
-    await typeLine(LINES[i],{speed:50,pauseAfter:50});
-  // start flicker + lightning
+
+  // type remaining lines at 65 ms/char
+  for(let i=0;i<LINES.length;i++){
+    await typeLine(LINES[i],{speed:65,pauseAfter:50});
+  }
+
+  // make the "march 2026" substring blink
+  const lastLine = out.lastElementChild?.firstChild; // the span in the last typed line
+  if(lastLine && lastLine.nodeType===Node.ELEMENT_NODE){
+    const span = lastLine;
+    const txt = span.textContent || "";
+    span.innerHTML = txt.replace(/march 2026/gi, '<span class="blink-2026">march 2026</span>');
+  }
+
+  // start visual effects
   startUsbFlicker();
   scheduleLightning();
 })();
