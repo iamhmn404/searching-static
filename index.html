@@ -12,40 +12,44 @@ html,body{
   font-family:"Share Tech Mono","Courier New",monospace;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
 }
-
-/* CRT static background (paused by .paused) */
-body::before,body::after{
-  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-  mix-blend-mode:overlay;
-}
+/* CRT/static overlay */
 body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
     repeating-linear-gradient(transparent 0 2px,rgba(255,255,255,.14)2px 3px),
     repeating-linear-gradient(90deg,rgba(255,255,255,.06)0 1px,transparent 1px 3px),
     radial-gradient(rgba(255,255,255,.07),transparent 65%);
-  opacity:.9;
+  mix-blend-mode:overlay;opacity:.9;
   animation:crtJitter .9s steps(8,end) infinite;
 }
 body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
     radial-gradient(transparent 40%,rgba(0,0,0,.35)70%),
     repeating-linear-gradient(45deg,rgba(255,255,255,.06)0 1px,transparent 1px 2px),
     repeating-linear-gradient(-45deg,rgba(255,255,255,.04)0 1px,transparent 1px 2px);
-  opacity:.35;
-  animation:noiseShift .6s steps(6,end) infinite;
+  opacity:.35;animation:noiseShift .6s steps(6,end) infinite;
 }
-body.paused::before,body.paused::after{animation-play-state:paused;}
-@keyframes crtJitter{0%,100%{transform:translate(0,0)}25%{transform:translate(-.6px,.4px)}50%{transform:translate(.7px,-.6px)}75%{transform:translate(-.3px,-.4px)}}
-@keyframes noiseShift{0%{transform:translate(0,0)}50%{transform:translate(.8px,-.8px)}100%{transform:translate(0,0)}}
+@keyframes crtJitter{
+  0%,100%{transform:translate(0,0)}
+  25%{transform:translate(-.6px,.4px)}
+  50%{transform:translate(.7px,-.6px)}
+  75%{transform:translate(-.3px,-.4px)}
+}
+@keyframes noiseShift{
+  0%{transform:translate(0,0)}
+  50%{transform:translate(.8px,-.8px)}
+  100%{transform:translate(0,0)}
+}
 
-/* Layout */
+/* layout + type */
 .wrap{display:grid;gap:28px;place-items:center;width:min(90vw,780px);z-index:1;}
 pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;white-space:pre-wrap;max-width:64ch;}
 .cursor{display:inline-block;width:.65ch;}
 .blink{animation:blink .55s step-end infinite;}
 @keyframes blink{50%{opacity:0;}}
 
-/* blinking “march 2026” with red glow */
+/* blinking march 2026 */
 .blink-2026{
   animation:twinkle .9s step-end infinite;
   color:#fff;
@@ -53,23 +57,38 @@ pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;white-space:pre-w
 }
 @keyframes twinkle{50%{opacity:0;}}
 
-/* USB */
+/* usb */
 .usb{position:relative;width:min(78vw,500px);aspect-ratio:16/9;opacity:0;
   filter:contrast(130%) brightness(102%);transition:opacity 2s ease-in;}
 .usb img{width:100%;height:100%;object-fit:contain;display:block;}
 .usb::before,.usb::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background-image:url('usb.png');background-repeat:no-repeat;
-  background-position:center;background-size:contain;mix-blend-mode:screen;opacity:0;}
-.usb.glow::before{filter:drop-shadow(0 0 2px rgba(255,255,255,.75)) drop-shadow(0 0 5px rgba(255,255,255,.65)) drop-shadow(0 0 10px rgba(255,255,255,.55)) drop-shadow(0 0 20px rgba(255,255,255,.45));
-  animation:shimmer 1.8s ease-in-out infinite;opacity:.75;}
-.usb.glow::after{filter:drop-shadow(0 0 3px rgba(255,255,255,.95)) drop-shadow(0 0 7px rgba(255,255,255,.85)) drop-shadow(0 0 12px rgba(255,255,255,.7)) drop-shadow(0 0 20px rgba(255,255,255,.55));opacity:0;}
+  background-image:url('usb.png');background-repeat:no-repeat;background-position:center;
+  background-size:contain;mix-blend-mode:screen;opacity:0;}
+.usb.glow::before{
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.75))
+          drop-shadow(0 0 5px rgba(255,255,255,.65))
+          drop-shadow(0 0 10px rgba(255,255,255,.55))
+          drop-shadow(0 0 20px rgba(255,255,255,.45));
+  animation:shimmer 1.8s ease-in-out infinite;opacity:.75;
+}
+.usb.glow::after{
+  filter:drop-shadow(0 0 3px rgba(255,255,255,.95))
+          drop-shadow(0 0 7px rgba(255,255,255,.85))
+          drop-shadow(0 0 12px rgba(255,255,255,.7))
+          drop-shadow(0 0 20px rgba(255,255,255,.55));
+  opacity:0;
+}
 .usb.glow img{animation:bodyPulse 2.6s ease-in-out infinite;}
-@keyframes shimmer{0%,100%{opacity:.45;transform:none}45%{opacity:.95;transform:translateX(.8px)}55%{opacity:.6;transform:translateX(-.8px)}}
+@keyframes shimmer{0%,100%{opacity:.45;transform:none}
+45%{opacity:.95;transform:translateX(.8px)}
+55%{opacity:.6;transform:translateX(-.8px)}}
 @keyframes bodyPulse{0%,100%{filter:contrast(130%) brightness(100%)}50%{filter:contrast(145%) brightness(106%)}}
 @keyframes edgeFlash{0%{opacity:0}10%{opacity:1}25%{opacity:.65}50%,100%{opacity:0}}
 
-/* Lightning */
-.flash{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(rgba(255,255,255,.9),rgba(255,255,255,0)60%);opacity:0;mix-blend-mode:screen;}
+/* lightning */
+.flash{position:fixed;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(rgba(255,255,255,.9),rgba(255,255,255,0)60%);
+  opacity:0;mix-blend-mode:screen;}
 .flash.active{animation:flashPop .18s ease-out 1;}
 @keyframes flashPop{0%{opacity:0}10%{opacity:1}100%{opacity:0}}
 </style>
@@ -84,10 +103,10 @@ pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;white-space:pre-w
 
 <script>
 window.addEventListener('DOMContentLoaded', function(){
-  var lines=[
+  var L=[
     "> result : \u0394-404",
     "> src    : unkn_wn",
-    "> cntnt  : unfinished_dance_demos",
+    "> cntnt  : unfinished_dance_demo",
     "> status : LOST SP//\u0394RK",
     "",
     "system : offline",
@@ -97,83 +116,61 @@ window.addEventListener('DOMContentLoaded', function(){
       usb=document.getElementById("usb"),
       flash=document.getElementById("flash");
 
-  /* --- steady typing --- */
-  function typeLine(text,opt){
-    opt=opt||{};
-    var speed=opt.speed||200,pause=opt.pauseAfter||0,showCursor=opt.showCursor!==false;
+  function typeLine(t,o){
+    o=o||{};var s=o.speed||30,p=o.pauseAfter||0,show=o.showCursor!==false;
     return new Promise(function(done){
-      var i=0;
-      var line=document.createElement("div");
-      var span=document.createElement("span");
+      var i=0,line=document.createElement("div"),span=document.createElement("span");
       line.appendChild(span);
-      if(showCursor){
-        var c=document.createElement("span");
-        c.className="cursor blink";c.textContent="▮";line.appendChild(c);
-      }
+      if(show){var c=document.createElement("span");c.className="cursor blink";c.textContent="▮";line.appendChild(c);}
       out.appendChild(line);
-      function tick(){
-        span.textContent=text.slice(0,++i);
-        if(i<text.length){setTimeout(tick,speed);}
-        else{setTimeout(done,pause);}
-      }
-      tick();
+      (function next(){
+        span.textContent=t.slice(0,++i);
+        if(i<t.length)setTimeout(next,s);else setTimeout(done,p);
+      })();
     });
   }
 
-  /* --- usb flicker + lightning --- */
   function startUsbFlicker(){
     usb.classList.add("glow");usb.style.opacity="1";
-    function flashEdge(){usb.classList.add("edge-flash");
-      setTimeout(function(){usb.classList.remove("edge-flash");},350);}
+    function flashEdge(){usb.classList.add("edge-flash");setTimeout(()=>usb.classList.remove("edge-flash"),350);}
     (function loop(){
       setTimeout(function(){
-        for(var i=0,n=2+Math.floor(Math.random()*3);i<n;i++)
-          setTimeout(flashEdge,i*70+Math.random()*50);
+        for(let i=0,n=2+Math.floor(Math.random()*3);i<n;i++)setTimeout(flashEdge,i*70+Math.random()*50);
         loop();
       },400+Math.random()*800);
     })();
   }
   function lightningBurst(){
-    flash.classList.add("active");
-    setTimeout(function(){flash.classList.remove("active");},200);
+    flash.classList.add('active');setTimeout(()=>flash.classList.remove('active'),200);
   }
   function scheduleLightning(){
     (function loop(){
       setTimeout(function(){
-        lightningBurst();if(Math.random()<.4) setTimeout(lightningBurst,200);
+        lightningBurst();if(Math.random()<.4)setTimeout(lightningBurst,200);
         loop();
       },6000+Math.random()*10000);
     })();
   }
 
-  /* --- sequence --- */
-  (function run(){
-    document.body.classList.add('paused'); // stop bg animations during typing
+  (async function run(){
     var search=document.createElement("div");
-    search.textContent="> searching static ...";
-    out.appendChild(search);
-    var blink=0;
-    var blinkTimer=setInterval(function(){search.style.visibility=(++blink%2)?"hidden":"visible";},120);
-    setTimeout(function(){
-      clearInterval(blinkTimer);search.style.visibility="visible";
-      var i=0,seen=false;
-      function next(){
-        if(i>=lines.length){
-          // mark march 2026
-          var last=out.lastElementChild;if(last&&last.firstChild){
-            var s=last.firstChild,txt=s.textContent||"";
-            s.innerHTML=txt.replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
-          }
-          document.body.classList.remove('paused');
-          startUsbFlicker();scheduleLightning();
-          return;
-        }
-        var t=lines[i];
-        if(t.indexOf("> status")!==-1) seen=true;
-        typeLine(t,{speed:200,pauseAfter:60,showCursor:!seen}).then(function(){i++;next();});
-      }
-      next();
-    },2500);
+    search.textContent="> searching static ...";out.appendChild(search);
+    let blink=0;let blinkTimer=setInterval(()=>{search.style.visibility=(++blink%2)?"hidden":"visible";},120);
+    await new Promise(r=>setTimeout(r,2500));clearInterval(blinkTimer);search.style.visibility="visible";
+
+    let seen=false;
+    for(let i=0;i<L.length;i++){
+      if(L[i].indexOf("> status")!==-1) seen=true;
+      await typeLine(L[i],{speed:30,pauseAfter:40,showCursor:!seen});
+    }
+
+    // mark "march 2026"
+    let last=out.lastElementChild;if(last&&last.firstChild){
+      let s=last.firstChild,txt=s.textContent||"";
+      s.innerHTML=txt.replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
+    }
+    startUsbFlicker();
+    scheduleLightning();
   })();
 });
 </script>
