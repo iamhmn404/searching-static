@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>I AM HUMAN — Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0b0d10; --fg:#e9e9ea; --accent:#36013F; }
+
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:"Share Tech Mono","Courier New",monospace;
+    display:flex; align-items:center; justify-content:center;
+    padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
+    overflow:hidden;
+  }
+
+  /* Static / scanline texture */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background:
+      repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,.025) 2px 3px),
+      radial-gradient(rgba(255,255,255,.04), transparent 60%);
+    mix-blend-mode:overlay;
+  }
+
+  .wrap{ display:grid; gap:28px; place-items:center; width:min(90vw, 780px); }
+
+  pre{
+    margin:0; font-size:clamp(14px, 2.4vw, 18px); line-height:1.55;
+    white-space:pre-wrap; max-width:64ch; text-align:left;
+  }
+  .cursor{ display:inline-block; width:.65ch; }
+  .blink { animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+
+  /* USB container (image file lives alongside index.html as usb.png) */
+  .usb{
+    --usb:url('usb.png');
+    position:relative;
+    width:min(72vw, 420px);
+    aspect-ratio:16/9;
+    opacity:0; /* revealed after typing */
+    filter:contrast(115%) brightness(96%);
+  }
+  .usb img{
+    width:100%; height:100%; object-fit:contain; display:block;
+  }
+
+  /* Edge glow layers (track image alpha via background-image) */
+  .usb::before,
+  .usb::after{
+    content:"";
+    position:absolute; inset:0; pointer-events:none;
+    background-image:var(--usb);
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:contain;
+    mix-blend-mode:screen;
+    opacity:0; /* animated later */
+  }
+
+  /* Subtle continuous shimmer (soft life) */
+  .usb.glow::before{
+    filter:
+      drop-shadow(0 0 1px rgba(255,255,255,.25))
+      drop-shadow(0 0 2px rgba(255,255,255,.18))
+      drop-shadow(0 0 4px rgba(255,255,255,.10));
+    animation: shimmer 2.8s ease-in-out infinite;
+    opacity:.35;
+  }
+
+  /* Sharper irregular edge flash (brief white spike) */
+  .usb.glow::after{
+    filter:
+      drop-shadow(0 0 2px rgba(255,255,255,.55))
+      drop-shadow(0 0 6px rgba(255,255,255,.45))
+      drop-shadow(0 0 12px rgba(255,255,255,.30));
+    opacity:0; /* animation toggled via class */
+  }
+
+  /* Gentle breathing on the body */
+  .usb.glow img{ animation: bodyPulse 6s ease-in-out infinite; }
+
+  /* Keyframes */
+  @keyframes shimmer{
+    0%,100%{ opacity:.25; transform:translateX(0) }
+    46%    { opacity:.40; transform:translateX(.4px) }
+    54%    { opacity:.30; transform:translateX(-.4px) }
+  }
+  @keyframes bodyPulse{
+    0%,100%{ filter:contrast(115%) brightness(96%) }
+    50%    { filter:contrast(120%) brightness(98%) }
+  }
+  @keyframes edgeFlash{
+    0%   { opacity:0; transform:none }
+    10%  { opacity:.95; transform:translateX(.6px) }
+    20%  { opacity:.55; transform:translateX(-.4px) }
+    40%  { opacity:.15; transform:none }
+    100% { opacity:0; transform:none }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion:reduce){
+    .blink, .usb.glow img, .usb.glow::before, .usb.glow::after{ animation:none !important }
+    .usb { opacity:.85 !important }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <pre id="out"></pre>
+
+    <!-- USB: uses usb.png beside this file -->
+    <div id="usb" class="usb">
+      <img src="usb.png" alt="recovered usb (partial signal)">
+    </div>
+  </div>
+
+<script>
+(() => {
+  /* ---------- LOG LINES (final text) ---------- */
+  const LINES = [
+    "> searching static ...",
+    "> result : \u0394-404",
+    "> src    : unkn_wn",
+    "> cntnt  : unfinished_dance_demo",
+    "> status : LOST SP//\u0394RK",
+    "",
+    "system : offline",
+    "next transmission : march 2026"
+  ];
+
+  const out = document.getElementById("out");
+  const usb = document.getElementById("usb");
+
+  function typeLine(text, {speed=60, pauseAfter=0}={}) {
+    return new Promise(resolve => {
+      let i=0;
+      const line = document.createElement("div");
+      const span = document.createElement("span");
+      const cursor = document.createElement("span");
+      cursor.className = "cursor blink";
+      cursor.textContent = "▮";
+      line.appendChild(span);
+      line.appendChild(cursor);
+      out.appendChild(line);
+
+      const timer = setInterval(() => {
+        span.textContent = text.slice(0, ++i);
+        if (i >= text.length) {
+          clearInterval(timer);
+          setTimeout(() => resolve(), pauseAfter);
+        }
+      }, speed);
+    });
+  }
+
+  function startUsbFlicker(){
+    // reveal + base shimmer
+    usb.style.opacity = '0.001'; // reflow kick
+    requestAnimationFrame(()=>{
+      usb.classList.add('glow');
+      usb.style.opacity = '1';
+    });
+
+    // add CSS hook for flashing ::after layer
+    const style = document.createElement('style');
+    style.textContent = `.usb.edge-flashing::after{ animation: edgeFlash 0.48s steps(1,end) 1; }`;
+    document.head.appendChild(style);
+
+    // random white edge flashes (2–7s, occasional double-tap)
+    const flash = () => {
+      usb.classList.add('edge-flashing');
+      setTimeout(()=>usb.classList.remove('edge-flashing'), 480);
+    };
+    (function loop(){
+      const t = 2000 + Math.random()*5000;
+      setTimeout(()=>{
+        flash();
+        if (Math.random() < 0.3){ setTimeout(flash, 120 + Math.random()*180); }
+        loop();
+      }, t);
+    })();
+  }
+
+  (async function run() {
+    // 1) searching + pause (scan beat)
+    await typeLine(LINES[0], {speed:60, pauseAfter:2500});
+    // 2) rest of lines
+    for (let i=1;i<LINES.length;i++){
+      await typeLine(LINES[i], {speed:50, pauseAfter:80});
+    }
+    // 3) reveal USB partial signal + flicker
+    startUsbFlicker();
+  })();
+})();
+</script>
+</body>
+</html>
