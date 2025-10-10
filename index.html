@@ -6,51 +6,67 @@
 <title>I AM HUMAN — Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b0d10;--fg:#e9e9ea;--accent:#36013F;}
+:root{--bg:#0b0d10;--fg:#e9e9ea;}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
 font-family:"Share Tech Mono","Courier New",monospace;
 display:flex;align-items:center;justify-content:center;overflow:hidden;}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;
-background:repeating-linear-gradient(transparent 0 2px,rgba(255,255,255,.03)2px 3px),
-radial-gradient(rgba(255,255,255,.05),transparent 60%);
-mix-blend-mode:overlay;}
+/* 4x stronger CRT texture */
+body::before{
+ content:"";position:fixed;inset:0;pointer-events:none;
+ background:
+  repeating-linear-gradient(transparent 0 2px,rgba(255,255,255,.12)2px 3px),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 2px),
+  radial-gradient(rgba(255,255,255,.08),transparent 60%);
+ mix-blend-mode:overlay;opacity:.7;
+}
 .wrap{display:grid;gap:28px;place-items:center;width:min(90vw,780px);}
 pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;
 white-space:pre-wrap;max-width:64ch;}
 .cursor{display:inline-block;width:.65ch;}
-.blink{animation:blink .6s step-end infinite;}
+.blink{animation:blink .55s step-end infinite;}
 @keyframes blink{50%{opacity:0;}}
 
 /* USB */
 .usb{--usb:url('usb.png');position:relative;width:min(78vw,500px);
-aspect-ratio:16/9;opacity:0;filter:contrast(125%) brightness(100%);}
+aspect-ratio:16/9;opacity:0;filter:contrast(135%) brightness(102%);}
 .usb img{width:100%;height:100%;object-fit:contain;display:block;}
-.usb::before,.usb::after{content:"";position:absolute;inset:0;pointer-events:none;
-background-image:var(--usb);background-repeat:no-repeat;background-position:center;
-background-size:contain;mix-blend-mode:screen;opacity:0;}
-.usb.glow::before{filter:
- drop-shadow(0 0 2px rgba(255,255,255,.45))
- drop-shadow(0 0 6px rgba(255,255,255,.35))
- drop-shadow(0 0 12px rgba(255,255,255,.25));
- animation:shimmer 2s ease-in-out infinite;opacity:.55;}
-.usb.glow::after{filter:
- drop-shadow(0 0 3px rgba(255,255,255,.75))
- drop-shadow(0 0 10px rgba(255,255,255,.55))
- drop-shadow(0 0 18px rgba(255,255,255,.45));
- opacity:0;}
-.usb.glow img{animation:bodyPulse 3s ease-in-out infinite;}
+.usb::before,.usb::after{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background-image:var(--usb);background-repeat:no-repeat;
+ background-position:center;background-size:contain;
+ mix-blend-mode:screen;opacity:0;
+}
+/* 4× white halo */
+.usb.glow::before{
+ filter:
+  drop-shadow(0 0 2px rgba(255,255,255,.7))
+  drop-shadow(0 0 5px rgba(255,255,255,.6))
+  drop-shadow(0 0 10px rgba(255,255,255,.5))
+  drop-shadow(0 0 20px rgba(255,255,255,.4));
+ animation:shimmer 1.8s ease-in-out infinite;opacity:.7;
+}
+.usb.glow::after{
+ filter:
+  drop-shadow(0 0 3px rgba(255,255,255,.9))
+  drop-shadow(0 0 7px rgba(255,255,255,.8))
+  drop-shadow(0 0 12px rgba(255,255,255,.6))
+  drop-shadow(0 0 20px rgba(255,255,255,.4));
+ opacity:0;
+}
+.usb.glow img{animation:bodyPulse 2.6s ease-in-out infinite;}
 @keyframes shimmer{0%,100%{opacity:.4;transform:none}
-45%{opacity:.8;transform:translateX(.8px)}
-55%{opacity:.5;transform:translateX(-.8px)}}
-@keyframes bodyPulse{0%,100%{filter:contrast(125%) brightness(100%)}
-50%{filter:contrast(135%) brightness(103%)}}
+45%{opacity:.9;transform:translateX(.8px)}
+55%{opacity:.6;transform:translateX(-.8px)}}
+@keyframes bodyPulse{0%,100%{filter:contrast(130%) brightness(100%)}
+50%{filter:contrast(145%) brightness(106%)}}
 @keyframes edgeFlash{0%{opacity:0;transform:none}
 10%{opacity:1;transform:translateX(.6px)}
-25%{opacity:.5;transform:translateX(-.6px)}
+25%{opacity:.6;transform:translateX(-.6px)}
 50%,100%{opacity:0;transform:none}}
 @media(prefers-reduced-motion:reduce){
  .blink,.usb.glow img,.usb.glow::before,.usb.glow::after{animation:none!important}
- .usb{opacity:.85!important}}
+ .usb{opacity:.9!important}}
+.error{color:#ffb3b3;white-space:pre-wrap;}
 </style>
 </head>
 <body>
@@ -62,6 +78,7 @@ background-size:contain;mix-blend-mode:screen;opacity:0;}
 </div>
 
 <script>
+try{
 (() => {
 const LINES=[
   "> searching static ...",
@@ -76,7 +93,7 @@ const LINES=[
 const out=document.getElementById("out");
 const usb=document.getElementById("usb");
 
-function typeLine(text,{speed=30,pauseAfter=0}={}) {
+function typeLine(text,{speed=42,pauseAfter=0}={}) {
   return new Promise(res=>{
     let i=0;
     const line=document.createElement("div");
@@ -92,34 +109,54 @@ function typeLine(text,{speed=30,pauseAfter=0}={}) {
   });
 }
 
+/* strong random USB flicker generator */
 function startUsbFlicker(){
   usb.style.opacity="0.001";
-  requestAnimationFrame(()=>{
-    usb.classList.add("glow");
-    usb.style.opacity="1";
-  });
+  requestAnimationFrame(()=>{usb.classList.add("glow");usb.style.opacity="1";});
   const style=document.createElement("style");
   style.textContent=".usb.edge-flash::after{animation:edgeFlash .35s steps(1,end) 1}";
   document.head.appendChild(style);
   const flash=()=>{usb.classList.add("edge-flash");
     setTimeout(()=>usb.classList.remove("edge-flash"),350);};
+  /* random pre-glitch while typing */
+  (function preLoop(){
+    const t=200+Math.random()*400;
+    setTimeout(()=>{flash();if(Math.random()<.7)flash();if(Date.now()%5e3<4e3)preLoop();},t);
+  })();
+  /* main glitch loop */
   (function loop(){
-    const t=400+Math.random()*800; // 0.4–1.2s
+    const t=400+Math.random()*800; // 0.4–1.2 s
     setTimeout(()=>{
       const n=2+Math.floor(Math.random()*3); // 2–4 hits
-      for(let i=0;i<n;i++)setTimeout(flash,i*80+Math.random()*60);
+      for(let i=0;i<n;i++)setTimeout(flash,i*70+Math.random()*50);
       loop();
     },t);
   })();
 }
 
 (async function run(){
-  await typeLine(LINES[0],{speed:30,pauseAfter:1200});
-  for(let i=1;i<LINES.length;i++)
-    await typeLine(LINES[i],{speed:28,pauseAfter:40});
+  await typeLine(LINES[0],{speed:42,pauseAfter:0});
+  // quick blinking phase for 2.5 s
+  const searching=document.createElement("div");
+  searching.textContent="> searching static ...";
+  out.appendChild(searching);
+  let blink=0;
+  const blinkTimer=setInterval(()=>{
+    searching.style.visibility=(++blink%2)?"hidden":"visible";
+  },120);
+  await new Promise(r=>setTimeout(r,2500));
+  clearInterval(blinkTimer);
+  searching.style.visibility="visible";
+  out.textContent=""; // clear then retype proper sequence
+  for(let i=0;i<LINES.length;i++)
+    await typeLine(LINES[i],{speed:42,pauseAfter:50});
   startUsbFlicker();
 })();
 })();
+}catch(err){
+ document.getElementById("out").textContent="> system error\n"+err;
+ console.error(err);
+}
 </script>
 </body>
 </html>
