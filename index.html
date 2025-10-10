@@ -6,62 +6,120 @@
 <title>I AM HUMAN — Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b0d10; --fg:#e9e9ea; --accent:#36013F; }
+:root{--bg:#0b0d10;--fg:#e9e9ea;--accent:#36013F;}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
+font-family:"Share Tech Mono","Courier New",monospace;
+display:flex;align-items:center;justify-content:center;overflow:hidden;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;
+background:repeating-linear-gradient(transparent 0 2px,rgba(255,255,255,.03)2px 3px),
+radial-gradient(rgba(255,255,255,.05),transparent 60%);
+mix-blend-mode:overlay;}
+.wrap{display:grid;gap:28px;place-items:center;width:min(90vw,780px);}
+pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;
+white-space:pre-wrap;max-width:64ch;}
+.cursor{display:inline-block;width:.65ch;}
+.blink{animation:blink .6s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
 
-  html,body{height:100%}
-  body{
-    margin:0; background:var(--bg); color:var(--fg);
-    font-family:"Share Tech Mono","Courier New",monospace;
-    display:flex; align-items:center; justify-content:center;
-    padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
-    overflow:hidden;
-  }
+/* USB */
+.usb{--usb:url('usb.png');position:relative;width:min(78vw,500px);
+aspect-ratio:16/9;opacity:0;filter:contrast(125%) brightness(100%);}
+.usb img{width:100%;height:100%;object-fit:contain;display:block;}
+.usb::before,.usb::after{content:"";position:absolute;inset:0;pointer-events:none;
+background-image:var(--usb);background-repeat:no-repeat;background-position:center;
+background-size:contain;mix-blend-mode:screen;opacity:0;}
+.usb.glow::before{filter:
+ drop-shadow(0 0 2px rgba(255,255,255,.45))
+ drop-shadow(0 0 6px rgba(255,255,255,.35))
+ drop-shadow(0 0 12px rgba(255,255,255,.25));
+ animation:shimmer 2s ease-in-out infinite;opacity:.55;}
+.usb.glow::after{filter:
+ drop-shadow(0 0 3px rgba(255,255,255,.75))
+ drop-shadow(0 0 10px rgba(255,255,255,.55))
+ drop-shadow(0 0 18px rgba(255,255,255,.45));
+ opacity:0;}
+.usb.glow img{animation:bodyPulse 3s ease-in-out infinite;}
+@keyframes shimmer{0%,100%{opacity:.4;transform:none}
+45%{opacity:.8;transform:translateX(.8px)}
+55%{opacity:.5;transform:translateX(-.8px)}}
+@keyframes bodyPulse{0%,100%{filter:contrast(125%) brightness(100%)}
+50%{filter:contrast(135%) brightness(103%)}}
+@keyframes edgeFlash{0%{opacity:0;transform:none}
+10%{opacity:1;transform:translateX(.6px)}
+25%{opacity:.5;transform:translateX(-.6px)}
+50%,100%{opacity:0;transform:none}}
+@media(prefers-reduced-motion:reduce){
+ .blink,.usb.glow img,.usb.glow::before,.usb.glow::after{animation:none!important}
+ .usb{opacity:.85!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<pre id="out"></pre>
+<div id="usb" class="usb">
+  <img src="usb.png" alt="recovered usb (partial signal)">
+</div>
+</div>
 
-  /* Static / scanlines */
-  body::before{
-    content:""; position:fixed; inset:0; pointer-events:none;
-    background:
-      repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,.03) 2px 3px),
-      radial-gradient(rgba(255,255,255,.05), transparent 60%);
-    mix-blend-mode:overlay;
-  }
+<script>
+(() => {
+const LINES=[
+  "> searching static ...",
+  "> result : \u0394-404",
+  "> src    : unkn_wn",
+  "> cntnt  : unfinished_dance_demo",
+  "> status : LOST SP//\u0394RK",
+  "",
+  "system : offline",
+  "next transmission : march 2026"
+];
+const out=document.getElementById("out");
+const usb=document.getElementById("usb");
 
-  .wrap{ display:grid; gap:28px; place-items:center; width:min(90vw, 780px); }
+function typeLine(text,{speed=30,pauseAfter=0}={}) {
+  return new Promise(res=>{
+    let i=0;
+    const line=document.createElement("div");
+    const span=document.createElement("span");
+    const cursor=document.createElement("span");
+    cursor.className="cursor blink";
+    cursor.textContent="▮";
+    line.appendChild(span);line.appendChild(cursor);out.appendChild(line);
+    const t=setInterval(()=>{
+      span.textContent=text.slice(0,++i);
+      if(i>=text.length){clearInterval(t);setTimeout(()=>res(),pauseAfter);}
+    },speed);
+  });
+}
 
-  pre{
-    margin:0; font-size:clamp(14px, 2.6vw, 19px); line-height:1.55;
-    white-space:pre-wrap; max-width:64ch; text-align:left;
-  }
-  .cursor{ display:inline-block; width:.65ch; }
-  .blink { animation: blink .7s step-end infinite; }
-  @keyframes blink { 50% { opacity:0; } }
+function startUsbFlicker(){
+  usb.style.opacity="0.001";
+  requestAnimationFrame(()=>{
+    usb.classList.add("glow");
+    usb.style.opacity="1";
+  });
+  const style=document.createElement("style");
+  style.textContent=".usb.edge-flash::after{animation:edgeFlash .35s steps(1,end) 1}";
+  document.head.appendChild(style);
+  const flash=()=>{usb.classList.add("edge-flash");
+    setTimeout(()=>usb.classList.remove("edge-flash"),350);};
+  (function loop(){
+    const t=400+Math.random()*800; // 0.4–1.2s
+    setTimeout(()=>{
+      const n=2+Math.floor(Math.random()*3); // 2–4 hits
+      for(let i=0;i<n;i++)setTimeout(flash,i*80+Math.random()*60);
+      loop();
+    },t);
+  })();
+}
 
-  /* USB (file beside this html: usb.png) */
-  .usb{
-    --usb:url('usb.png');
-    position:relative;
-    width:min(78vw, 500px);
-    aspect-ratio:16/9;
-    opacity:0; /* revealed after typing */
-    filter:contrast(120%) brightness(98%);
-  }
-  .usb img{ width:100%; height:100%; object-fit:contain; display:block; }
-
-  /* Edge-glow layers follow alpha via background-image */
-  .usb::before,
-  .usb::after{
-    content:"";
-    position:absolute; inset:0; pointer-events:none;
-    background-image:var(--usb);
-    background-repeat:no-repeat;
-    background-position:center;
-    background-size:contain;
-    mix-blend-mode:screen;
-    opacity:0;
-  }
-
-  /* Stronger continuous shimmer */
-  .usb.glow::before{
-    filter:
-      drop-shadow(0 0 2px rgba(255,255,255,.45))
-      drop-shadow(0 0 6px rgba(255,255,
+(async function run(){
+  await typeLine(LINES[0],{speed:30,pauseAfter:1200});
+  for(let i=1;i<LINES.length;i++)
+    await typeLine(LINES[i],{speed:28,pauseAfter:40});
+  startUsbFlicker();
+})();
+})();
+</script>
+</body>
+</html>
