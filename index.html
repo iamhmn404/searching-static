@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>I AM HUMAN — Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-
 <style>
 :root{--bg:#0b0d10;--fg:#e9e9ea;}
 html,body{
@@ -14,24 +13,45 @@ html,body{
   display:flex;align-items:center;justify-content:center;overflow:hidden;
 }
 
-/* visible CRT static + scan lines */
+/* ===== STRONG CRT + STATIC (much brighter than before) ===== */
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  /* horizontal scan-lines + vertical scan + film vignette */
   background:
-    repeating-linear-gradient(transparent 0 2px,rgba(255,255,255,.08)2px 3px),
-    repeating-linear-gradient(90deg,rgba(255,255,255,.03)0 1px,transparent 1px 2px),
-    radial-gradient(rgba(255,255,255,.06),transparent 65%);
+    /* horizontal scanlines */
+    repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,.14) 2px 3px),
+    /* vertical scanlines */
+    repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 3px),
+    /* soft vignette */
+    radial-gradient(rgba(255,255,255,.07), transparent 65%);
   mix-blend-mode:overlay;
-  animation:crtNoise 1s steps(8,end) infinite;
-  opacity:.8;
+  opacity:.9;
+  animation:crtJitter .9s steps(8,end) infinite;
 }
-@keyframes crtNoise{
+/* animated “grain” layer */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(transparent 40%, rgba(0,0,0,.35) 70%),
+    /* dither noise via multiple tiny gradients */
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.04) 0 1px, transparent 1px 2px);
+  opacity:.35;
+  animation:noiseShift .6s steps(6,end) infinite;
+}
+@keyframes crtJitter{
   0%,100%{transform:translate(0,0)}
-  25%{transform:translate(-.4px,.3px)}
-  50%{transform:translate(.5px,-.4px)}
-  75%{transform:translate(-.2px,-.3px)}
+  25%{transform:translate(-.6px,.4px)}
+  50%{transform:translate(.7px,-.6px)}
+  75%{transform:translate(-.3px,-.4px)}
+}
+@keyframes noiseShift{
+  0%{transform:translate(0,0)}
+  50%{transform:translate(.8px,-.8px)}
+  100%{transform:translate(0,0)}
 }
 
+/* ===== LAYOUT ===== */
 .wrap{display:grid;gap:28px;place-items:center;width:min(90vw,780px);z-index:1;}
 pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;
 white-space:pre-wrap;max-width:64ch;}
@@ -39,13 +59,13 @@ white-space:pre-wrap;max-width:64ch;}
 .blink{animation:blink .55s step-end infinite;}
 @keyframes blink{50%{opacity:0;}}
 
-/* USB */
+/* ===== USB IMAGE ===== */
 .usb{
   --usb:url('usb.png');
   position:relative;
   width:min(78vw,500px);
   aspect-ratio:16/9;
-  opacity:0; /* will fade in */
+  opacity:0;                 /* fade-in on start */
   filter:contrast(130%) brightness(102%);
   transition:opacity 2s ease-in;
 }
@@ -59,35 +79,51 @@ white-space:pre-wrap;max-width:64ch;}
 /* 4× bright white halo */
 .usb.glow::before{
   filter:
-    drop-shadow(0 0 2px rgba(255,255,255,.7))
-    drop-shadow(0 0 5px rgba(255,255,255,.6))
-    drop-shadow(0 0 10px rgba(255,255,255,.5))
-    drop-shadow(0 0 20px rgba(255,255,255,.4));
-  animation:shimmer 1.8s ease-in-out infinite;opacity:.7;
+    drop-shadow(0 0 2px rgba(255,255,255,.75))
+    drop-shadow(0 0 5px rgba(255,255,255,.65))
+    drop-shadow(0 0 10px rgba(255,255,255,.55))
+    drop-shadow(0 0 20px rgba(255,255,255,.45));
+  animation:shimmer 1.8s ease-in-out infinite;opacity:.75;
 }
 .usb.glow::after{
   filter:
-    drop-shadow(0 0 3px rgba(255,255,255,.9))
-    drop-shadow(0 0 7px rgba(255,255,255,.8))
-    drop-shadow(0 0 12px rgba(255,255,255,.6))
-    drop-shadow(0 0 20px rgba(255,255,255,.4));
-  opacity:0;
+    drop-shadow(0 0 3px rgba(255,255,255,.95))
+    drop-shadow(0 0 7px rgba(255,255,255,.85))
+    drop-shadow(0 0 12px rgba(255,255,255,.7))
+    drop-shadow(0 0 20px rgba(255,255,255,.55));
+  opacity:0; /* pulsed by JS for edge flashes */
 }
 .usb.glow img{animation:bodyPulse 2.6s ease-in-out infinite;}
-@keyframes shimmer{0%,100%{opacity:.4;transform:none}
-45%{opacity:.9;transform:translateX(.8px)}
+@keyframes shimmer{0%,100%{opacity:.45;transform:none}
+45%{opacity:.95;transform:translateX(.8px)}
 55%{opacity:.6;transform:translateX(-.8px)}}
 @keyframes bodyPulse{0%,100%{filter:contrast(130%) brightness(100%)}
 50%{filter:contrast(145%) brightness(106%)}}
 @keyframes edgeFlash{
   0%{opacity:0;transform:none}
   10%{opacity:1;transform:translateX(.6px)}
-  25%{opacity:.6;transform:translateX(-.6px)}
+  25%{opacity:.65;transform:translateX(-.6px)}
   50%,100%{opacity:0;transform:none}
 }
+
+/* ===== LIGHTNING INTERFERENCE EFFECT ===== */
+.lightning body::before, .lightning body::after { opacity:1 !important; }
+.flash {
+  position:fixed;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(rgba(255,255,255,.9), rgba(255,255,255,.0) 60%);
+  opacity:0;mix-blend-mode:screen;
+}
+.flash.active{ animation:flashPop .18s ease-out 1; }
+@keyframes flashPop{
+  0%{opacity:0}
+  10%{opacity:1}
+  100%{opacity:0}
+}
+
+/* Reduced motion */
 @media(prefers-reduced-motion:reduce){
- .blink,.usb.glow img,.usb.glow::before,.usb.glow::after{animation:none!important}
- .usb{opacity:.9!important;transition:none!important}
+  .blink,.usb.glow img,.usb.glow::before,.usb.glow::after, body::before, body::after{animation:none!important}
+  .usb{opacity:.95!important;transition:none!important}
 }
 </style>
 </head>
@@ -99,6 +135,7 @@ white-space:pre-wrap;max-width:64ch;}
     <img src="usb.png" alt="recovered usb (partial signal)">
   </div>
 </div>
+<div id="flash" class="flash"></div>
 
 <script>
 (() => {
@@ -113,8 +150,9 @@ const LINES=[
 ];
 const out=document.getElementById("out");
 const usb=document.getElementById("usb");
+const flash=document.getElementById("flash");
 
-function typeLine(text,{speed=42,pauseAfter=0}={}) {
+function typeLine(text,{speed=50,pauseAfter=0}={}) {
   return new Promise(res=>{
     let i=0;
     const line=document.createElement("div");
@@ -122,9 +160,7 @@ function typeLine(text,{speed=42,pauseAfter=0}={}) {
     const cursor=document.createElement("span");
     cursor.className="cursor blink";
     cursor.textContent="▮";
-    line.appendChild(span);
-    line.appendChild(cursor);
-    out.appendChild(line);
+    line.appendChild(span); line.appendChild(cursor); out.appendChild(line);
     const t=setInterval(()=>{
       span.textContent=text.slice(0,++i);
       if(i>=text.length){clearInterval(t);setTimeout(()=>res(),pauseAfter);}
@@ -132,44 +168,66 @@ function typeLine(text,{speed=42,pauseAfter=0}={}) {
   });
 }
 
-/* USB glitch engine */
+/* USB flicker (edge flashes) */
 function startUsbFlicker(){
   usb.classList.add("glow");
-  usb.style.opacity="1"; // fade in via CSS transition
+  usb.style.opacity="1"; // smooth fade-in
   const style=document.createElement("style");
   style.textContent=".usb.edge-flash::after{animation:edgeFlash .35s steps(1,end) 1}";
   document.head.appendChild(style);
-  const flash=()=>{usb.classList.add("edge-flash");
+  const flashEdge=()=>{usb.classList.add("edge-flash");
     setTimeout(()=>usb.classList.remove("edge-flash"),350);};
-  // continuous flicker 0.4–1.2 s
+  // continuous flashes every 0.4–1.2s with 2–4 hits
   (function loop(){
     const t=400+Math.random()*800;
     setTimeout(()=>{
       const n=2+Math.floor(Math.random()*3);
-      for(let i=0;i<n;i++)setTimeout(flash,i*70+Math.random()*50);
+      for(let i=0;i<n;i++)setTimeout(flashEdge,i*70+Math.random()*50);
       loop();
     },t);
   })();
 }
 
+/* Lightning interference: bright screen pop + heavier background */
+function lightningBurst(){
+  // quick white pop
+  flash.classList.add('active');
+  setTimeout(()=>flash.classList.remove('active'), 200);
+
+  // briefly intensify scanlines/static by toggling a class on <html>
+  document.documentElement.classList.add('lightning');
+  setTimeout(()=>document.documentElement.classList.remove('lightning'), 220);
+}
+function scheduleLightning(){
+  (function loop(){
+    // fire roughly 3–6 times per minute, irregular
+    const t = 6000 + Math.random()*10000; // 6–16s
+    setTimeout(()=>{
+      const bursts = 1 + Math.floor(Math.random()*2); // 1–2 chained
+      for(let i=0;i<bursts;i++){
+        setTimeout(lightningBurst, i*180 + Math.random()*120);
+      }
+      loop();
+    }, t);
+  })();
+}
+
 (async function run(){
-  // show only ONE searching line that blinks for 2.5s
+  // one “searching static …” line that BLINKS for 2.5 s (no duplicate)
   const line=document.createElement("div");
   line.textContent="> searching static ...";
   out.appendChild(line);
   let blink=0;
-  const blinkTimer=setInterval(()=>{
-    line.style.visibility=(++blink%2)?"hidden":"visible";
-  },120);
+  const blinkTimer=setInterval(()=>{ line.style.visibility=(++blink%2)?"hidden":"visible"; },120);
   await new Promise(r=>setTimeout(r,2500));
   clearInterval(blinkTimer);
   line.style.visibility="visible";
-
-  // now type remaining lines
+  // then type the rest
   for(let i=0;i<LINES.length;i++)
-    await typeLine(LINES[i],{speed:42,pauseAfter:50});
-
+    await typeLine(LINES[i],{speed:50,pauseAfter:50});
+  // start flicker + lightning
   startUsbFlicker();
+  scheduleLightning();
 })();
 })();
 </script>
