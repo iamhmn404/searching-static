@@ -13,13 +13,13 @@ html,body{
   display:flex;align-items:center;justify-content:center;overflow:hidden;
 }
 
-/* ===== CRT / STATIC ===== */
+/* ===== STRONG CRT + STATIC ===== */
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
-    repeating-linear-gradient(transparent 0 2px,rgba(255,255,255,.14)2px 3px),
-    repeating-linear-gradient(90deg,rgba(255,255,255,.06)0 1px,transparent 1px 3px),
-    radial-gradient(rgba(255,255,255,.07),transparent 65%);
+    repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,.14) 2px 3px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 3px),
+    radial-gradient(rgba(255,255,255,.07), transparent 65%);
   mix-blend-mode:overlay;
   opacity:.9;
   animation:crtJitter .9s steps(8,end) infinite;
@@ -27,9 +27,9 @@ body::before{
 body::after{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
-    radial-gradient(transparent 40%,rgba(0,0,0,.35)70%),
-    repeating-linear-gradient(45deg,rgba(255,255,255,.06)0 1px,transparent 1px 2px),
-    repeating-linear-gradient(-45deg,rgba(255,255,255,.04)0 1px,transparent 1px 2px);
+    radial-gradient(transparent 40%, rgba(0,0,0,.35) 70%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.04) 0 1px, transparent 1px 2px);
   opacity:.35;
   animation:noiseShift .6s steps(6,end) infinite;
 }
@@ -45,7 +45,7 @@ body::after{
   100%{transform:translate(0,0)}
 }
 
-/* ===== TEXT AREA ===== */
+/* ===== LAYOUT ===== */
 .wrap{display:grid;gap:28px;place-items:center;width:min(90vw,780px);z-index:1;}
 pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;white-space:pre-wrap;max-width:64ch;}
 .cursor{display:inline-block;width:.65ch;}
@@ -78,6 +78,7 @@ pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;white-space:pre-w
   background-position:center;background-size:contain;
   mix-blend-mode:screen;opacity:0;
 }
+/* 4× bright white halo */
 .usb.glow::before{
   filter:
     drop-shadow(0 0 2px rgba(255,255,255,.75))
@@ -92,7 +93,7 @@ pre{margin:0;font-size:clamp(14px,2.6vw,19px);line-height:1.55;white-space:pre-w
     drop-shadow(0 0 7px rgba(255,255,255,.85))
     drop-shadow(0 0 12px rgba(255,255,255,.7))
     drop-shadow(0 0 20px rgba(255,255,255,.55));
-  opacity:0;
+  opacity:0; /* pulsed by JS */
 }
 .usb.glow img{animation:bodyPulse 2.6s ease-in-out infinite;}
 @keyframes shimmer{0%,100%{opacity:.45;transform:none}
@@ -143,11 +144,12 @@ const LINES=[
   "system : offline",
   "next transmission : march 2026"
 ];
+
 const out=document.getElementById("out");
 const usb=document.getElementById("usb");
 const flash=document.getElementById("flash");
 
-function typeLine(text,{speed=100,pauseAfter=0,showCursor=true}={}) {
+function typeLine(text,{speed=200,pauseAfter=0,showCursor=true}={}) {
   return new Promise(res=>{
     let i=0;
     const line=document.createElement("div");
@@ -208,6 +210,7 @@ function scheduleLightning(){
 }
 
 (async function run(){
+  // BLINKING search line (single instance)
   const search=document.createElement("div");
   search.textContent="> searching static ...";
   out.appendChild(search);
@@ -217,13 +220,19 @@ function scheduleLightning(){
   clearInterval(blinkTimer);
   search.style.visibility="visible";
 
-  // type each line, hide cursor after "status"
+  // Type lines with cursor UNTIL (and including) "status"; remove cursor AFTER that line
+  let afterStatus=false;
   for(let i=0;i<LINES.length;i++){
-    const showCursor = !(LINES[i].includes("status"));
-    await typeLine(LINES[i],{speed:100,pauseAfter:50,showCursor});
+    const lineText=LINES[i];
+    // show cursor only if we have NOT yet passed the status line
+    const showCursor = !afterStatus;
+    await typeLine(lineText,{speed=200,pauseAfter:60,showCursor});
+    if(lineText.includes("> status")){
+      afterStatus = true; // subsequent lines have NO cursor
+    }
   }
 
-  // make “march 2026” blink with red glow
+  // Make “march 2026” blink with red glow
   const lastLine=out.lastElementChild?.firstChild;
   if(lastLine){
     const txt=lastLine.textContent||"";
