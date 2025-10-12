@@ -29,10 +29,10 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 .blink{animation:blink .55s step-end infinite}
 @keyframes blink{50%{opacity:0}}
 
-/* tag + date */
+/* tag + date (violet/magenta, same rhythm) */
 .tag{color:var(--ntx);text-shadow:0 0 6px rgba(126,231,255,.9),0 0 14px rgba(126,231,255,.7)}
 .date{
-  color:#ff66cc; /* warmer magenta base */
+  color:#e07aff; /* base text tint */
   animation:pulseDate 3.8s ease-in-out infinite;
 }
 
@@ -42,7 +42,7 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
   40%{filter:brightness(1.9) drop-shadow(0 0 20px rgba(255,255,255,.95)) drop-shadow(0 0 36px rgba(178,102,255,.85))}
   60%{filter:brightness(1.5) drop-shadow(0 0 14px rgba(178,102,255,.65))}
 }
-/* brighter, longer log glow */
+/* strong white→violet log glow */
 @keyframes pulseText{
   0%,100%{
     text-shadow:
@@ -58,26 +58,20 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
       0 0 46px rgba(178,102,255,.88);
   }
 }
-/* brighter magenta-violet pulse for date */
+/* same rhythm, but more magenta/violent and brighter */
 @keyframes pulseDate{
   0%,100%{
     text-shadow:
-      0 0 8px rgba(255,102,204,.6),
-      0 0 18px rgba(178,102,255,.45),
-      0 0 26px rgba(255,153,255,.35);
+      0 0 8px rgba(224,122,255,.65),
+      0 0 18px rgba(178,102,255,.5),
+      0 0 26px rgba(255,153,255,.45);
   }
-  40%{
+  35%,65%{
     text-shadow:
-      0 0 12px rgba(255,102,204,1),
+      0 0 12px rgba(224,122,255,1),
       0 0 28px rgba(178,102,255,1),
-      0 0 44px rgba(255,153,255,.95),
-      0 0 64px rgba(255,102,204,.85);
-  }
-  60%{
-    text-shadow:
-      0 0 10px rgba(255,102,204,.95),
-      0 0 24px rgba(178,102,255,.9),
-      0 0 36px rgba(255,153,255,.85);
+      0 0 44px rgba(255,153,255,.98),
+      0 0 64px rgba(224,122,255,.9);
   }
 }
 
@@ -92,16 +86,17 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 .idline .content{
   display:inline;white-space:pre-wrap;overflow-wrap:break-word;
   margin-left:var(--idw);vertical-align:top;
-  will-change:text-shadow; /* (no pulse needed, but safe for future) */
 }
 .logline .cur,.idline .cur{display:inline}
 
-/* USB */
+/* USB — align left with text (no X shift), same breathing */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
   opacity:0;transition:opacity 2.5s ease-in;
-  transform:translateX(-3%) translateY(-8%);
+  /* REMOVE translateX so its left edge aligns with text */
+  transform:translateY(-8%);
   margin-top:-14px;
+  justify-self:start;
   animation:pulseUSB 3.8s ease-in-out infinite paused;
 }
 .usb.visible{opacity:0.9;animation-play-state:running;}
@@ -124,26 +119,26 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 const ENDING = "#next_transmission : march 2026";
 
 const LOGS = [
-  "> log    : sub-bass residue detected",
-  "> log    : faint harmonic pulse detected",
-  "> log    : residual loop fragment detected",
-  "> log    : rhythmic ghost pattern detected",
-  "> log    : low-frequency hum detected",
-  "> log    : sub-harmonic trace detected",
-  "> log    : quiet loop fragment detected",
-  "> log    : unfinished sequence detected",
-  "> log    : harmonic pulse detected — energy rising"
+  "sub-bass residue detected",
+  "faint harmonic pulse detected",
+  "residual loop fragment detected",
+  "rhythmic ghost pattern detected",
+  "low-frequency hum detected",
+  "sub-harmonic trace detected",
+  "quiet loop fragment detected",
+  "unfinished sequence detected",
+  "harmonic pulse detected — energy rising"
 ];
 
 const IDS = [
-  "> id     : human // made",
-  "> id     : human // raw",
-  "> id     : human // organic",
-  "> id     : human // analog",
-  "> id     : human // magnetic",
-  "> id     : human // imperfect",
-  "> id     : human // authentic",
-  "> id     : human // feeling"
+  "human // made",
+  "human // raw",
+  "human // organic",
+  "human // analog",
+  "human // magnetic",
+  "human // imperfect",
+  "human // authentic",
+  "human // feeling"
 ];
 
 const STATUS = [
@@ -159,17 +154,17 @@ const SEARCH_PAUSE=1200, BREATH=200;
 const out=document.getElementById("out"), usb=document.getElementById("usb");
 const rnd=(a,b)=>Math.random()*(b-a)+a, wait=ms=>new Promise(r=>setTimeout(r,ms));
 
-/* ---------- MEASURE PREFIXES FOR WRAP ---------- */
-function setPrefixWidth(prefixText, cssVarName){
+/* ---------- measure prefix widths for exact wrap ---------- */
+function measure(text){
   const probe=document.createElement("span");
-  probe.textContent=prefixText;
+  probe.textContent=text;
   probe.style.position="absolute";probe.style.visibility="hidden";probe.style.whiteSpace="pre";
   probe.style.fontFamily=getComputedStyle(out).fontFamily;
   probe.style.fontSize=getComputedStyle(out).fontSize;
   document.body.appendChild(probe);
   const w=probe.getBoundingClientRect().width;
   document.body.removeChild(probe);
-  document.documentElement.style.setProperty(cssVarName, w+"px");
+  return w;
 }
 
 /* ---------- TYPE HELPERS ---------- */
@@ -187,63 +182,63 @@ async function typeSimpleLine(text, speed=SPEED_BASE){
   await wait(BREATH);
 }
 
-async function typePrefixedLine(fullText, kind="log"){ // kind: "log" | "id"
-  const row=document.createElement("div"); row.className=kind==="log"?"logline":"idline";
+async function typePrefixed(contentText, kind){ // kind = "log" | "id"
+  const row=document.createElement("div");
+  row.className = kind==="log" ? "logline" : "idline";
   const prefix=document.createElement("span"); prefix.className="prefix";
   const content=document.createElement("span"); content.className="content";
   const cur=document.createElement("span"); cur.className="cur cursor blink"; cur.textContent="▮";
-  // split into prefix + content
-  const match = fullText.match(/^(\>\s+[a-z]+(\s+)?\:)(.*)$/i);
-  const pText = match ? match[1]+" " : (kind==="log"?"> log : ":"> id  : ");
-  const cText = match ? match[3].trimStart() : fullText;
 
-  prefix.textContent=pText;
+  // Hard-coded prefixes so the colon is guaranteed
+  const pText = (kind==="log") ? "> log : " : "> id  : ";
+  prefix.textContent = pText;
+
+  // set left margin by measuring once (prevents missing colons / mis-wraps)
+  const w = measure(pText);
+  document.documentElement.style.setProperty(kind==="log"?"--logw":"--idw", w+"px");
+
   row.appendChild(prefix); row.appendChild(content); row.appendChild(cur); out.appendChild(row);
 
-  // typing with a deliberate mid-pause on log
-  const halfway=Math.floor(cText.length/2); let paused=false;
-  for(let i=0;i<cText.length;i++){
-    content.textContent=cText.slice(0,i+1);
+  // typing loop (+ mid pause on log)
+  const t = contentText;
+  const halfway=Math.floor(t.length/2); let paused=false;
+  for(let i=0;i<t.length;i++){
+    content.textContent=t.slice(0,i+1);
     let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
     if(kind==="log"){
       if(Math.random()<STUTTER_PROB) d+=Math.floor(rnd(30,STUTTER_MAX));
-      const ch=cText[i];
-      if(ch===','||ch==='—') d+=Math.floor(rnd(80,180));
+      const ch=t[i]; if(ch===','||ch==='—') d+=Math.floor(rnd(80,180));
       if(!paused && i>=halfway){ d+=900; paused=true; }
     }
     await wait(d);
   }
   await wait(BREATH);
-  if(kind==="log") lastLogContent=content;
+  if(kind==="log") lastLogContent = content;
 }
 
 let lastLogContent=null;
 
 /* ---------- RUN ---------- */
 (async function run(){
-  // measure prefix widths so wrapping aligns perfectly
-  setPrefixWidth("> log : ", "--logw");
-  setPrefixWidth("> id  : ", "--idw");
-
-  // choose one at random from each pool
-  const logLine   = LOGS[Math.floor(Math.random()*LOGS.length)];
-  const idLine    = IDS[Math.floor(Math.random()*IDS.length)];
-  const status    = STATUS[Math.floor(Math.random()*STATUS.length)];
-
   // sequence
   await typeSimpleLine("> searching static…");
   await wait(SEARCH_PAUSE);
-  await typePrefixedLine(logLine, "log");
-  await typePrefixedLine(idLine, "id");
+
+  const log = LOGS[Math.floor(Math.random()*LOGS.length)];
+  const id  = IDS[Math.floor(Math.random()*IDS.length)];
+  const status = STATUS[Math.floor(Math.random()*STATUS.length)];
+
+  await typePrefixed(log, "log");
+  await typePrefixed(id, "id");
   await typeSimpleLine(status);
-  await typeSimpleLine(ENDING, SPEED_END); // slower, suspense
+  await typeSimpleLine(ENDING, SPEED_END); // slower for suspense
 
   // USB fade & sync
   setTimeout(()=>{
     usb.classList.add("visible");
     if(lastLogContent){
       lastLogContent.style.animation="none";
-      void lastLogContent.offsetWidth; // reset
+      void lastLogContent.offsetWidth;
       lastLogContent.style.animation="pulseText 3.8s ease-in-out infinite";
     }
   },500);
