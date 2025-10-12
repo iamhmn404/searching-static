@@ -7,8 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#000;--fg:#fff;--alert:#ff2f4d;--ntx:#7EE7FF}
-
-/* Base */
 html,body{height:100%}
 body{
   margin:0;background:var(--bg);color:var(--fg);
@@ -19,43 +17,36 @@ body{
 .wrap{position:relative;width:min(92vw,780px);display:grid;gap:28px;place-items:center}
 pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 
-/* Cursor / tags */
+/* Cursor + tag colors */
 .cursor{display:inline-block;width:.65ch}
 .blink{animation:blink .55s step-end infinite}
 @keyframes blink{50%{opacity:0}}
-.tag{color:var(--ntx);text-shadow:0 0 3px rgba(126,231,255,.96),0 0 6px rgba(126,231,255,.75),0 0 12px rgba(126,231,255,.55),0 0 20px rgba(126,231,255,.35)}
-.date{color:#fff;text-shadow:0 0 3px var(--alert),0 0 6px var(--alert),0 0 12px var(--alert);animation:twinkle .9s step-end infinite}
+.tag{color:var(--ntx);text-shadow:0 0 4px rgba(126,231,255,.9),0 0 10px rgba(126,231,255,.7)}
+.date{color:#fff;text-shadow:0 0 4px var(--alert),0 0 10px var(--alert);animation:twinkle .9s step-end infinite}
 @keyframes twinkle{50%{opacity:0}}
 
-/* Log flare (brighter) */
-.log-flare{animation:logFlare 1.2s ease-out 1}
+/* Ghost flare for LOG */
+.log-flare{animation:logFlare 1.3s ease-out 1}
 .log-echo{animation:logEcho 1.1s ease-out 1}
 @keyframes logFlare{
   0%{text-shadow:none}
-  22%{text-shadow:
-      0 0 14px rgba(255,255,255,1),
-      0 0 28px rgba(255,255,255,1),
-      0 0 46px rgba(210,180,255,.7),
-      0 0 68px rgba(210,180,255,.55)}
+  25%{text-shadow:0 0 14px rgba(255,255,255,1),0 0 28px rgba(255,255,255,1),0 0 46px rgba(210,180,255,.7)}
   100%{text-shadow:none}
 }
 @keyframes logEcho{
   0%{text-shadow:none}
-  35%{text-shadow:
-      0 0 10px rgba(255,255,255,.9),
-      0 0 24px rgba(210,180,255,.6),
-      0 0 44px rgba(210,180,255,.4)}
+  30%{text-shadow:0 0 10px rgba(255,255,255,.9),0 0 24px rgba(210,180,255,.6)}
   100%{text-shadow:none}
 }
 
-/* Hanging indent for LOG only (align wraps under “log :”) */
-.hang-log{
-  padding-left: 8ch;        /* width of “> log : ” */
+/* Hanging indent for log lines */
+.hang-log {
+  padding-left: 8ch; /* width of '> log : ' */
   text-indent: -8ch;
 }
 
-/* USB (PNG only): slow fade-in then ember flicker */
-.usb{position:relative;width:min(75vw,520px);aspect-ratio:16/9;opacity:0;transition:opacity 2.5s ease}
+/* USB fade + flicker */
+.usb{position:relative;width:min(75vw,520px);aspect-ratio:16/9;opacity:0;transition:opacity 2.5s ease;margin-top:-20px}
 .usb img{width:100%;height:100%;object-fit:contain;display:block;filter:
   drop-shadow(0 0 10px rgba(255,255,255,.85))
   drop-shadow(0 0 20px rgba(255,255,255,.7))
@@ -84,4 +75,82 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px
 <body>
   <div class="wrap">
     <pre id="out"></pre>
-    <div id="usb" class="usb"><img src="usb.png" alt="re
+    <div id="usb" class="usb"><img src="usb.png" alt="recovered usb"></div>
+  </div>
+
+<script>
+const ENDINGS=["#next_transmission : march 2026","#estimated_intercept : march 2026"];
+const VARIANTS=[
+  ["> searching static…","> log : low-frequency hum detected — waiting for resonance, waiting for contact.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
+  ["> searching static…","> log : residual loop fragments detected — unfinished, magnetic, raw.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
+  ["> searching static…","> log : residual loop fragment detected — something quiet, something human.","> status : Δ-WAVECATCHER","> signal : sub-harmonic trace","> bpm : 122"],
+  ["> searching static…","> log : faint harmonic pulse detected — energy rising.","> status : Δ-LOST SP//ARK","> signal : rhythmic ghost pattern","> bpm : 122"]
+];
+
+const SPEED_BASE=16, JITTER=6, STUTTER_MAX=220, STUTTER_PROB=0.35, SEARCH_PAUSE=1600;
+const out=document.getElementById("out"), usb=document.getElementById("usb");
+const rnd=(a,b)=>Math.random()*(b-a)+a, wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function typeLine(text,{isLog=false}={}){
+  const line=document.createElement("div");
+  const span=document.createElement("span");
+  const cursor=document.createElement("span"); cursor.className="cursor blink"; cursor.textContent="▮";
+  line.appendChild(span); line.appendChild(cursor); out.appendChild(line);
+  if(isLog) line.classList.add("hang-log");
+
+  for(let i=0;i<text.length;i++){
+    const char=text[i];
+    const partial=text.slice(0,i+1)
+      .replace(/^\s*#next_transmission\s*:/i,'<span class="tag">#next_transmission</span> :')
+      .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> :')
+      .replace(/march 2026/gi,'<span class="date">march 2026</span>');
+    span.innerHTML=partial;
+
+    let delay=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
+    if(isLog){
+      if(/[,\u2014]/.test(char)) delay+=Math.floor(rnd(80,200)); // pause on commas/dashes
+      if(Math.random()<STUTTER_PROB) delay+=Math.floor(rnd(50,STUTTER_MAX));
+    }
+    await wait(delay);
+  }
+
+  if(isLog){
+    span.classList.add('log-flare');
+    setTimeout(()=>span.classList.add('log-echo'),800);
+  }
+}
+
+(async function run(){
+  const v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)].slice();
+  v.push(Math.random()<0.7?ENDINGS[0]:ENDINGS[1]);
+
+  await typeLine(v[0]); await wait(SEARCH_PAUSE);
+  await typeLine(v[1],{isLog:true});
+  await typeLine(v[2]); await typeLine(v[3]); await typeLine(v[4]);
+
+  const final=document.createElement("div"); out.appendChild(final);
+  final.innerHTML=v[5]
+    .replace(/^\s*#next_transmission\s*:/i,'<span class="tag">#next_transmission</span> : ')
+    .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> : ')
+    .replace(/march 2026/gi,'<span class="date">march 2026</span>');
+
+  setTimeout(()=>{ usb.style.opacity="1"; }, 300);
+  setTimeout(()=>{ usb.classList.add('flicker'); }, 3000);
+
+  (function bursts(){
+    const delay=rnd(400,1200);
+    setTimeout(()=>{
+      const hits=2+Math.floor(Math.random()*3);
+      for(let i=0;i<hits;i++){
+        setTimeout(()=>{
+          usb.style.opacity=".95";
+          setTimeout(()=>{usb.style.opacity="1"},90+Math.random()*90);
+        }, i*80 + Math.random()*60);
+      }
+      bursts();
+    },delay);
+  })();
+})();
+</script>
+</body>
+</html>
