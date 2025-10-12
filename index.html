@@ -7,18 +7,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#000;    /* jet black */
-  --fg:#fff;    /* white text */
-  --alert:#ff2f4d;   /* red blink for date */
-  --neon:#7EE7FF;    /* cyan for #next_transmission */
+  --bg:#000;    /* jet black */
+  --fg:#fff;    /* white text */
+  --alert:#ff2f4d;   /* red blink for date */
+  --neon:#7EE7FF;    /* cyan for #next_transmission */
 }
 
 html,body{height:100%}
 body{
-  margin:0; background:var(--bg); color:var(--fg);
-  font-family:"Share Tech Mono","Courier New",monospace;
-  display:flex; align-items:center; justify-content:center;
-  padding:24px; overflow:hidden;
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:"Share Tech Mono","Courier New",monospace;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; overflow:hidden;
 }
 
 .wrap{ position:relative; width:min(92vw,780px); display:grid; gap:28px; place-items:center; }
@@ -29,29 +29,29 @@ pre{ margin:0; max-width:64ch; white-space:pre-wrap; font-size:clamp(14px,2.6vw,
 @keyframes blink{50%{opacity:0}}
 
 .blink-2026{
-  color:#fff;
-  text-shadow:0 0 3px var(--alert),0 0 6px var(--alert),0 0 12px var(--alert);
-  animation:twinkle .9s step-end infinite;
+  color:#fff;
+  text-shadow:0 0 3px var(--alert),0 0 6px var(--alert),0 0 12px var(--alert);
+  animation:twinkle .9s step-end infinite;
 }
 @keyframes twinkle{50%{opacity:0}}
 
 .tag-ntx{
-  color:var(--neon);
-  text-shadow:
-    0 0 3px rgba(126,231,255,.95),
-    0 0 6px rgba(126,231,255,.75),
-    0 0 12px rgba(126,231,255,.55),
-    0 0 20px rgba(126,231,255,.35);
+  color:var(--neon);
+  text-shadow:
+    0 0 3px rgba(126,231,255,.95),
+    0 0 6px rgba(126,231,255,.75),
+    0 0 12px rgba(126,231,255,.55),
+    0 0 20px rgba(126,231,255,.35);
 }
 
 /* one-time bright flash for the pulse line */
 .pulse-flash{
-  animation:pulseFlash 1s ease-out 1;
+  animation:pulseFlash 1s ease-out 1;
 }
 @keyframes pulseFlash{
-  0%  { text-shadow:none; }
-  30% { text-shadow:0 0 6px rgba(255,255,255,.9), 0 0 14px rgba(255,255,255,.7); }
-  100%{ text-shadow:none; }
+  0%  { text-shadow:none; }
+  30% { text-shadow:0 0 6px rgba(255,255,255,.9), 0 0 14px rgba(255,255,255,.7); }
+  100%{ text-shadow:none; }
 }
 
 /* USB block */
@@ -60,129 +60,129 @@ pre{ margin:0; max-width:64ch; white-space:pre-wrap; font-size:clamp(14px,2.6vw,
 
 /* reduced motion */
 @media (prefers-reduced-motion:reduce){
-  .blink{animation:none!important}
-  .blink-2026{animation:none!important; text-shadow:none!important}
-  .pulse-flash{animation:none!important}
+  .blink{animation:none!important}
+  .blink-2026{animation:none!important; text-shadow:none!important}
+  .pulse-flash{animation:none!important}
 }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <pre id="out"></pre>
+  <div class="wrap">
+    <pre id="out"></pre>
 
-    <!-- USB starts as MP4; after two loops, swaps to PNG automatically -->
-    <div id="usb" class="usb">
-      <video id="usbvid" src="usb.mp4" muted playsinline autoplay></video>
-    </div>
-  </div>
+    <!-- USB starts as MP4; after two loops, swaps to PNG automatically -->
+    <div id="usb" class="usb">
+      <video id="usbvid" src="usb.mp4" muted playsinline autoplay></video>
+    </div>
+  </div>
 
 <script>
 /* Sequence & settings */
 const SPEED = 20; // ms per char
 
 const LINES = [
-  "> searching static…",                        // 0: type out
-  "",                                           // 1: blank line (before the pulse line)
-  "a pulse hums faintly beneath the noise",     // 2: pulse line (flash once after typing)
-  "",                                           // 3: blank line (after the pulse line)
-  "> status : \\u0394- LOST SP//ARK_01",        // 4
-  "> signal : sub-bass residue",                // 5
-  "> bpm : unknown",                            // 6
-  "next transmission : march 2026"              // 7 (transform to #next_transmission + blinking date)
+  "> searching static…",                        // 0: type out
+  "",                                           // 1: blank line (before the pulse line)
+  "a pulse hums faintly beneath the noise",     // 2: pulse line (flash once after typing)
+  "",                                           // 3: blank line (after the pulse line)
+  "> status : \\u0394- LOST SP//ARK_01",        // 4
+  "> signal : sub-bass residue",                // 5
+  "> bpm : unknown",                            // 6
+  "next transmission : march 2026"              // 7 (transform to #next_transmission + blinking date)
 ].map(s=>s.replace("\\u0394","Δ"));
 
 const out = document.getElementById("out");
 
 /* Type a line with optional cursor */
 function typeLine(text,{speed=SPEED,pauseAfter=0,showCursor=false,flashAfter=false}={}){
-  return new Promise(res=>{
-    const line=document.createElement("div");
-    const span=document.createElement("span");
-    line.appendChild(span);
-    let cursor=null;
-    if(showCursor){
-      cursor=document.createElement("span");
-      cursor.className="cursor blink";
-      cursor.textContent="▮";
-      line.appendChild(cursor);
-    }
-    out.appendChild(line);
+  return new Promise(res=>{
+    const line=document.createElement("div");
+    const span=document.createElement("span");
+    line.appendChild(span);
+    let cursor=null;
+    if(showCursor){
+      cursor=document.createElement("span");
+      cursor.className="cursor blink";
+      cursor.textContent="▮";
+      line.appendChild(cursor);
+    }
+    out.appendChild(line);
 
-    let i=0;
-    (function tick(){
-      // Inject special styling on-the-fly
-      let partial = text.slice(0,++i);
-      span.innerHTML = partial
-        .replace(/^#next_transmission/i,'<span class="tag-ntx">#next_transmission</span>')
-        .replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
-      if(i<text.length){
-        setTimeout(tick,speed);
-      } else {
-        // optional one-time glow for the pulse line after it completes
-        if(flashAfter){
-          span.classList.add('pulse-flash');
-          setTimeout(()=>res(), pauseAfter);
-        } else {
-          setTimeout(res, pauseAfter);
-        }
-      }
-    })();
-  });
+    let i=0;
+    (function tick(){
+      // Inject special styling on-the-fly
+      let partial = text.slice(0,++i);
+      span.innerHTML = partial
+        .replace(/^#next_transmission/i,'<span class="tag-ntx">#next_transmission</span>')
+        .replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
+      if(i<text.length){
+        setTimeout(tick,speed);
+      } else {
+        // optional one-time glow for the pulse line after it completes
+        if(flashAfter){
+          span.classList.add('pulse-flash');
+          setTimeout(()=>res(), pauseAfter);
+        } else {
+          setTimeout(res, pauseAfter);
+        }
+      }
+    })();
+  });
 }
 
 /* Render sequence */
 (async function run(){
-  // 0) "searching static…" types out with a blinking cursor
-  await typeLine(LINES[0], {showCursor:true, pauseAfter:300});
+  // 0) "searching static…" types out with a blinking cursor
+  await typeLine(LINES[0], {showCursor:true, pauseAfter:300});
 
-  // 1) blank line (before pulse)
-  await typeLine(LINES[1], {showCursor:false, pauseAfter:0});
+  // 1) blank line (before pulse)
+  await typeLine(LINES[1], {showCursor:false, pauseAfter:0});
 
-  // 2) pulse line (no cursor, then flash once)
-  await typeLine(LINES[2], {showCursor:false, pauseAfter:250, flashAfter:true});
+  // 2) pulse line (no cursor, then flash once)
+  await typeLine(LINES[2], {showCursor:false, pauseAfter:250, flashAfter:true});
 
-  // 3) blank line (after pulse)
-  await typeLine(LINES[3], {showCursor:false, pauseAfter:0});
+  // 3) blank line (after pulse)
+  await typeLine(LINES[3], {showCursor:false, pauseAfter:0});
 
-  // 4–6) system lines each with a trailing blinking cursor
-  await typeLine(LINES[4], {showCursor:true, pauseAfter:60});
-  await typeLine(LINES[5], {showCursor:true, pauseAfter:60});
-  await typeLine(LINES[6], {showCursor:true, pauseAfter:160});
+  // 4–6) system lines each with a trailing blinking cursor
+  await typeLine(LINES[4], {showCursor:true, pauseAfter:60});
+  await typeLine(LINES[5], {showCursor:true, pauseAfter:60});
+  await typeLine(LINES[6], {showCursor:true, pauseAfter:160});
 
-  // 7) final line: convert "next transmission :" -> "#next_transmission :" and blink date
-  const final = document.createElement("div"); out.appendChild(final);
-  final.innerHTML = LINES[7]
-    .replace(/^\s*next transmission\s*:/i,'<span class="tag-ntx">#next_transmission</span> : ')
-    .replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
+  // 7) final line: convert "next transmission :" -> "#next_transmission :" and blink date
+  const final = document.createElement("div"); out.appendChild(final);
+  final.innerHTML = LINES[7]
+    .replace(/^\s*next transmission\s*:/i,'<span class="tag-ntx">#next_transmission</span> : ')
+    .replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
 })();
 </script>
 
 <script>
 /* USB video: play exactly twice, then swap to usb.png */
 (function(){
-  const container = document.getElementById('usb');
-  const vid = document.getElementById('usbvid');
-  if(!vid) return;
+  const container = document.getElementById('usb');
+  const vid = document.getElementById('usbvid');
+  if(!vid) return;
 
-  let plays = 0;
-  // Ensure autoplay on iOS: already muted + playsinline
-  vid.addEventListener('ended', () => {
-    plays++;
-    if(plays < 2){
-      // replay manually (no loop attribute)
-      try { vid.currentTime = 0; vid.play(); } catch(e){}
-    } else {
-      // swap to PNG
-      const img = new Image();
-      img.src = 'usb.png';
-      img.alt = 'recovered usb (still)';
-      img.onload = () => {
-        container.replaceChildren(img);
-      };
-      // if png missing, just pause on last frame
-      setTimeout(() => { if (container.firstChild !== img) container.replaceChildren(img); }, 500);
-    }
-  }, {once:false});
+  let plays = 0;
+  // Ensure autoplay on iOS: already muted + playsinline
+  vid.addEventListener('ended', () => {
+    plays++;
+    if(plays < 2){
+      // replay manually (no loop attribute)
+      try { vid.currentTime = 0; vid.play(); } catch(e){}
+    } else {
+      // swap to PNG
+      const img = new Image();
+      img.src = 'usb.png';
+      img.alt = 'recovered usb (still)';
+      img.onload = () => {
+        container.replaceChildren(img);
+      };
+      // if png missing, just pause on last frame
+      setTimeout(() => { if (container.firstChild !== img) container.replaceChildren(img); }, 500);
+    }
+  }, {once:false});
 })();
 </script>
 </body>
