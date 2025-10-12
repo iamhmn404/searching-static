@@ -16,17 +16,23 @@ body{
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;padding:24px;
 }
-.wrap{width:min(92vw,780px);display:grid;gap:28px;justify-items:start;align-items:start}
+/* Older cinematic layout feel: slightly narrower and nudged right */
+.wrap{
+  width:min(88vw,760px);
+  display:grid;gap:28px;
+  justify-items:start;align-items:start;text-align:left;
+  transform:translateX(4%);
+}
 pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 
 .cursor{display:inline-block;width:.65ch}
 .blink{animation:blink .55s step-end infinite}
 @keyframes blink{50%{opacity:0}}
 
-/* glowing tag + date */
+/* tag + date */
 .tag{color:var(--ntx);text-shadow:0 0 6px rgba(126,231,255,.9),0 0 14px rgba(126,231,255,.7)}
 .date{
-  color:#fff;
+  color:#ff4444; /* warmer red base */
   animation:pulseDate 3.8s ease-in-out infinite;
 }
 
@@ -40,7 +46,7 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 @keyframes pulseText{
   0%,100%{
     text-shadow:
-      0 0 4px rgba(255,255,255,.2),
+      0 0 4px rgba(255,255,255,.3),
       0 0 8px rgba(255,255,255,.25),
       0 0 12px rgba(160,130,255,.2);
   }
@@ -52,26 +58,27 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
       0 0 46px rgba(136,104,255,.8);
   }
 }
+/* redder focal pulse for date */
 @keyframes pulseDate{
-  0%,100%{text-shadow:0 0 6px rgba(255,47,77,.45),0 0 14px rgba(255,47,77,.35)}
+  0%,100%{text-shadow:0 0 6px rgba(255,60,60,.55),0 0 14px rgba(255,60,60,.35)}
   40%{text-shadow:
-    0 0 10px rgba(255,47,77,1),
-    0 0 24px rgba(255,100,180,.95),
-    0 0 34px rgba(136,104,255,1),
-    0 0 50px rgba(255,47,77,.8)}
+    0 0 10px rgba(255,60,60,1),
+    0 0 24px rgba(255,120,120,.95),
+    0 0 34px rgba(255,40,40,.9),
+    0 0 50px rgba(255,60,60,.8)}
   60%{text-shadow:
-    0 0 8px rgba(255,47,77,.9),
-    0 0 20px rgba(255,100,180,.8),
-    0 0 28px rgba(136,104,255,.85)}
+    0 0 8px rgba(255,60,60,.9),
+    0 0 20px rgba(255,120,120,.8),
+    0 0 28px rgba(255,40,40,.85)}
 }
 
-/* --- Layout --- */
+/* --- Layout for log line (wrapping-safe) --- */
 .logline{position:relative;max-width:64ch;min-height:1.6em}
 .logline .prefix{position:absolute;left:0;top:0;white-space:pre;}
 .logline .content{
-  display:inline;
-  white-space:pre-wrap;
-  overflow-wrap:break-word;
+  display:inline;                 /* keep natural wraps */
+  white-space:pre-wrap;           /* preserve spaces + wrap */
+  overflow-wrap:break-word;       /* break long tokens if needed */
   margin-left:var(--logw);
   vertical-align:top;
   will-change:text-shadow;
@@ -79,7 +86,7 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 }
 .logline .cur{display:inline}
 
-/* USB image */
+/* USB */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
   opacity:0;transition:opacity 2.5s ease-in;
@@ -192,9 +199,12 @@ let lastLogContent=null;
   const v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)].slice();
   v.push(Math.random()<0.7?ENDINGS[0]:ENDINGS[1]);
 
-  await typeLine(v[0]);await wait(SEARCH_PAUSE);
+  await typeLine(v[0]);
+  await wait(SEARCH_PAUSE);
   await typeLogLine(v[1]);
-  await typeLine(v[2]);await typeLine(v[3]);await typeLine(v[4]);
+  await typeLine(v[2]);
+  await typeLine(v[3]);
+  await typeLine(v[4]);
   await typeLine(v[5],SPEED_END);
 
   setTimeout(()=>{
