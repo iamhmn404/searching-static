@@ -25,56 +25,36 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 .date{color:#fff;text-shadow:0 0 4px var(--alert),0 0 10px var(--alert);animation:twinkle .9s step-end infinite}
 @keyframes twinkle{50%{opacity:0}}
 
-.log-flare{animation:logFlare 1.2s ease-out 1}
-.log-echo{animation:logEcho 1.0s ease-out 1}
-@keyframes logFlare{
-  0%{text-shadow:none}
-  24%{text-shadow:0 0 14px rgba(255,255,255,1),0 0 28px rgba(255,255,255,1),0 0 46px rgba(210,180,255,.7)}
-  100%{text-shadow:none}
-}
-@keyframes logEcho{
-  0%{text-shadow:none}
-  35%{text-shadow:0 0 10px rgba(255,255,255,.9),0 0 24px rgba(210,180,255,.6)}
-  100%{text-shadow:none}
+/* --- Shared bright pulse for LOG + USB --- */
+@keyframes pulseSync{
+  0%,100%{filter:brightness(1) drop-shadow(0 0 6px rgba(255,255,255,.3))}
+  40%{filter:brightness(1.8) drop-shadow(0 0 18px rgba(255,255,255,.9)) drop-shadow(0 0 32px rgba(136,104,255,.7))}
+  60%{filter:brightness(1.4) drop-shadow(0 0 12px rgba(136,104,255,.6))}
 }
 
-/* LOG line: absolute prefix + margin-left content */
+/* LOG line */
 .logline{position:relative;max-width:64ch;min-height:1.6em}
 .logline .prefix{position:absolute;left:0;top:0;white-space:pre;}
-.logline .content{display:inline;white-space:normal;overflow-wrap:anywhere;margin-left:var(--logw);}
+.logline .content{
+  display:inline;white-space:normal;overflow-wrap:anywhere;margin-left:var(--logw);
+  animation:pulseSync 3.8s ease-in-out infinite;
+}
 .logline .cur{display:inline}
 
-/* USB glow + flicker */
+/* USB element */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
   opacity:0;transition:opacity 2.5s ease-in;
   transform:translateX(-3%) translateY(-8%);margin-top:-14px;
+  animation:pulseSync 3.8s ease-in-out infinite paused;
 }
-.usb.visible{opacity:0.88}
+.usb.visible{opacity:0.9;animation-play-state:running;}
 .usb img{
-  width:100%;height:100%;object-fit:contain;display:block;filter:
-    drop-shadow(0 0 10px rgba(255,255,255,.85))
-    drop-shadow(0 0 20px rgba(255,255,255,.7))
-    drop-shadow(0 0 34px rgba(210,180,255,.5))
-    drop-shadow(0 0 52px rgba(210,180,255,.35));
-}
-.usb.flicker{opacity:.85}
-.usb.flicker img{animation:emberBreath 3.8s ease-in-out infinite}
-@keyframes emberBreath{
-  0%,100%{filter:
-    drop-shadow(0 0 6px rgba(255,255,255,.6))
-    drop-shadow(0 0 14px rgba(255,255,255,.5))
-    drop-shadow(0 0 24px rgba(210,180,255,.4))
-    drop-shadow(0 0 40px rgba(210,180,255,.28))}
-  50%{filter:
-    drop-shadow(0 0 12px rgba(255,255,255,.95))
-    drop-shadow(0 0 22px rgba(255,255,255,.8))
-    drop-shadow(0 0 36px rgba(210,180,255,.6))
-    drop-shadow(0 0 54px rgba(210,180,255,.45))}
+  width:100%;height:100%;object-fit:contain;display:block;
 }
 
 @media (prefers-reduced-motion:reduce){
-  .blink,.date,.log-flare,.log-echo,.usb img{animation:none!important;text-shadow:none!important}
+  .blink,.date,.logline .content,.usb{animation:none!important;text-shadow:none!important}
 }
 </style>
 </head>
@@ -88,7 +68,7 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 const ENDINGS=["#next_transmission : march 2026","#estimated_intercept : march 2026"];
 const VARIANTS=[
   ["> searching static…","> log : low-frequency hum detected — awaiting resonance, awaiting contact.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
-  ["> searching static…","> log : residual loop fragments detected — magnetic, raw.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
+  ["> searching static…","> log : residual loop fragments detected — unfinished, magnetic, raw.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
   ["> searching static…","> log : residual loop fragment detected — something quiet, something human.","> status : Δ-WAVECATCHER","> signal : sub-harmonic trace","> bpm : 122"],
   ["> searching static…","> log : faint harmonic pulse detected — energy rising.","> status : Δ-LOST SP//ARK","> signal : rhythmic ghost pattern","> bpm : 122"]
 ];
@@ -100,9 +80,7 @@ const rnd=(a,b)=>Math.random()*(b-a)+a,wait=ms=>new Promise(r=>setTimeout(r,ms))
 function setLogWidth(){
   const probe=document.createElement("span");
   probe.textContent="> log : ";
-  probe.style.position="absolute";
-  probe.style.visibility="hidden";
-  probe.style.whiteSpace="pre";
+  probe.style.position="absolute";probe.style.visibility="hidden";probe.style.whiteSpace="pre";
   probe.style.fontFamily=getComputedStyle(out).fontFamily;
   probe.style.fontSize=getComputedStyle(out).fontSize;
   document.body.appendChild(probe);
@@ -117,7 +95,6 @@ async function typeLine(text, speed=SPEED_BASE){
   const cur=document.createElement("span");
   cur.className="cursor blink"; cur.textContent="▮";
   line.appendChild(span); line.appendChild(cur); out.appendChild(line);
-
   for(let i=0;i<text.length;i++){
     span.innerHTML=text.slice(0,i+1)
       .replace(/^\s*#next_transmission\s*:/i,'<span class="tag">#next_transmission</span> :')
@@ -137,7 +114,6 @@ async function typeLogLine(fullText){
 
   const t=fullText.replace(/^>\s*log\s*:\s*/i,"");
   const halfway=Math.floor(t.length/2); let paused=false;
-
   for(let i=0;i<t.length;i++){
     content.textContent=t.slice(0,i+1);
     let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
@@ -147,8 +123,6 @@ async function typeLogLine(fullText){
     if(!paused && i>=halfway){ d+=1000; paused=true; }
     await wait(d);
   }
-  content.classList.add('log-flare');
-  setTimeout(()=>content.classList.add('log-echo'),900);
   await wait(BREATH);
 }
 
@@ -165,23 +139,7 @@ async function typeLogLine(fullText){
   await typeLine(v[5],SPEED_END);
 
   setTimeout(()=>usb.classList.add("visible"),500);
-  setTimeout(()=>usb.classList.add("flicker"),3000);
-
-  (function bursts(){
-    const delay=rnd(400,1200);
-    setTimeout(()=>{
-      const hits=2+Math.floor(Math.random()*3);
-      for(let i=0;i<hits;i++){
-        setTimeout(()=>{
-          usb.style.opacity=".95";
-          setTimeout(()=>usb.style.opacity="1",90+Math.random()*90);
-        }, i*80 + Math.random()*60);
-      }
-      bursts();
-    },delay);
-  })();
 })();
 </script>
 </body>
 </html>
-
