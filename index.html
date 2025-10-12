@@ -40,7 +40,7 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 @keyframes pulseText{
   0%,100%{
     text-shadow:
-      0 0 4px rgba(255,255,255,.4),
+      0 0 4px rgba(255,255,255,.2),
       0 0 8px rgba(255,255,255,.25),
       0 0 12px rgba(160,130,255,.2);
   }
@@ -66,16 +66,17 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 }
 
 /* --- Layout --- */
+.logline{position:relative;max-width:64ch;min-height:1.6em}
+.logline .prefix{position:absolute;left:0;top:0;white-space:pre;}
 .logline .content{
-  display:inline;                /* inline keeps natural wrapping */
-  white-space:pre-wrap;          /* preserve spaces + allow wrapping */
-  overflow-wrap:break-word;      /* break long words if needed */
+  display:inline;
+  white-space:pre-wrap;
+  overflow-wrap:break-word;
   margin-left:var(--logw);
   vertical-align:top;
   will-change:text-shadow;
   animation:pulseText 3.8s ease-in-out infinite;
 }
-
 .logline .cur{display:inline}
 
 /* USB image */
