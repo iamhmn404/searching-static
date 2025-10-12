@@ -5,59 +5,87 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>I AM HUMAN — Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#000;--fg:#fff;--alert:#ff2f4d;--ntx:#7EE7FF;--logw:0px}
 
-html,body{height:100%}
+<style>
+:root{--bg:#000;--fg:#fff;--alert:#ff2f4d;--ntx:#7EE7FF;--logw:0px;}
+
+html,body{height:100%;}
 body{
   margin:0;background:#000;color:#fff;
   font-family:"Share Tech Mono","Courier New",monospace;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;padding:24px;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:24px;
 }
-.wrap{position:relative;width:min(92vw,780px);display:grid;gap:28px;justify-items:start;align-items:start}
-pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
+.wrap{
+  position:relative;width:min(92vw,780px);
+  display:grid;gap:28px;justify-items:start;align-items:start;
+}
+pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6;}
 
-.cursor{display:inline-block;width:.65ch}
-.blink{animation:blink .55s step-end infinite}
-@keyframes blink{50%{opacity:0}}
+.cursor{display:inline-block;width:.65ch;}
+.blink{animation:blink .55s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
 
-.tag{color:var(--ntx);text-shadow:0 0 4px rgba(126,231,255,.9),0 0 10px rgba(126,231,255,.7)}
-.date{color:#fff;text-shadow:0 0 4px var(--alert),0 0 10px var(--alert);animation:twinkle .9s step-end infinite}
-@keyframes twinkle{50%{opacity:0}}
-
-/* --- Shared bright pulse for LOG + USB --- */
-@keyframes pulseSync{
-  0%,100%{filter:brightness(1) drop-shadow(0 0 6px rgba(255,255,255,.3))}
-  40%{filter:brightness(1.8) drop-shadow(0 0 18px rgba(255,255,255,.9)) drop-shadow(0 0 32px rgba(136,104,255,.7))}
-  60%{filter:brightness(1.4) drop-shadow(0 0 12px rgba(136,104,255,.6))}
+/* glowing tag + date */
+.tag{color:var(--ntx);text-shadow:0 0 4px rgba(126,231,255,.9),0 0 10px rgba(126,231,255,.7);}
+.date{
+  color:#fff;
+  animation:pulseDate 3.8s ease-in-out infinite;
 }
 
-/* LOG line */
-.logline{position:relative;max-width:64ch;min-height:1.6em}
+/* --- Animations --- */
+@keyframes pulseUSB{
+  0%,100%{filter:brightness(1) drop-shadow(0 0 6px rgba(255,255,255,.3));}
+  40%{filter:brightness(1.8) drop-shadow(0 0 18px rgba(255,255,255,.9)) drop-shadow(0 0 32px rgba(136,104,255,.7));}
+  60%{filter:brightness(1.4) drop-shadow(0 0 12px rgba(136,104,255,.6));}
+}
+@keyframes pulseText{
+  0%,100%{text-shadow:0 0 2px rgba(255,255,255,.25),0 0 4px rgba(255,255,255,.18);}
+  40%{text-shadow:0 0 8px rgba(255,255,255,1),0 0 18px rgba(160,130,255,.85),0 0 26px rgba(160,130,255,.55);}
+  60%{text-shadow:0 0 6px rgba(255,255,255,.75),0 0 14px rgba(160,130,255,.5);}
+}
+/* brighter focal pulse for march 2026 */
+@keyframes pulseDate{
+  0%,100%{text-shadow:0 0 6px rgba(255,47,77,.45),0 0 14px rgba(255,47,77,.35);}
+  40%{text-shadow:
+    0 0 10px rgba(255,47,77,1),
+    0 0 24px rgba(255,100,180,.95),
+    0 0 34px rgba(136,104,255,1),
+    0 0 50px rgba(255,47,77,.8);}
+  60%{text-shadow:
+    0 0 8px rgba(255,47,77,.9),
+    0 0 20px rgba(255,100,180,.8),
+    0 0 28px rgba(136,104,255,.85);}
+}
+
+/* --- Layout --- */
+.logline{position:relative;max-width:64ch;min-height:1.6em;}
 .logline .prefix{position:absolute;left:0;top:0;white-space:pre;}
 .logline .content{
-  display:inline;white-space:normal;overflow-wrap:anywhere;margin-left:var(--logw);
-  animation:pulseSync 3.8s ease-in-out infinite;
+  display:inline-block;white-space:normal;overflow-wrap:anywhere;
+  margin-left:var(--logw);
+  will-change:text-shadow;
+  animation:pulseText 3.8s ease-in-out infinite;
 }
-.logline .cur{display:inline}
+.logline .cur{display:inline;}
 
-/* USB element */
+/* USB image */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
   opacity:0;transition:opacity 2.5s ease-in;
-  transform:translateX(-3%) translateY(-8%);margin-top:-14px;
-  animation:pulseSync 3.8s ease-in-out infinite paused;
+  transform:translateX(-3%) translateY(-8%);
+  margin-top:-14px;
+  animation:pulseUSB 3.8s ease-in-out infinite paused;
 }
 .usb.visible{opacity:0.9;animation-play-state:running;}
-.usb img{
-  width:100%;height:100%;object-fit:contain;display:block;
-}
+.usb img{width:100%;height:100%;object-fit:contain;display:block;}
 
 @media (prefers-reduced-motion:reduce){
-  .blink,.date,.logline .content,.usb{animation:none!important;text-shadow:none!important}
+  .blink,.date,.logline .content,.usb{animation:none!important;text-shadow:none!important;}
 }
 </style>
 </head>
+
 <body>
 <div class="wrap">
   <pre id="out"></pre>
@@ -65,22 +93,43 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 </div>
 
 <script>
-const ENDINGS=["#next_transmission : march 2026","#estimated_intercept : march 2026"];
+const ENDINGS=[
+  "#next_transmission : march 2026",
+  "#estimated_intercept : march 2026"
+];
 const VARIANTS=[
-  ["> searching static…","> log : low-frequency hum detected — awaiting resonance, awaiting contact.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
-  ["> searching static…","> log : residual loop fragments detected — unfinished, magnetic, raw.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
-  ["> searching static…","> log : residual loop fragment detected — something quiet, something human.","> status : Δ-WAVECATCHER","> signal : sub-harmonic trace","> bpm : 122"],
-  ["> searching static…","> log : faint harmonic pulse detected — energy rising.","> status : Δ-LOST SP//ARK","> signal : rhythmic ghost pattern","> bpm : 122"]
+  ["> searching static…",
+   "> log : low-frequency hum detected — awaiting resonance, awaiting contact.",
+   "> status : Δ-LOST SP//ARK",
+   "> signal : sub-bass residue",
+   "> bpm : 122"],
+  ["> searching static…",
+   "> log : residual loop fragments detected — unfinished, magnetic, raw.",
+   "> status : Δ-LOST SP//ARK",
+   "> signal : sub-bass residue",
+   "> bpm : 122"],
+  ["> searching static…",
+   "> log : residual loop fragment detected — something quiet, something human.",
+   "> status : Δ-WAVECATCHER",
+   "> signal : sub-harmonic trace",
+   "> bpm : 122"],
+  ["> searching static…",
+   "> log : faint harmonic pulse detected — energy rising.",
+   "> status : Δ-LOST SP//ARK",
+   "> signal : rhythmic ghost pattern",
+   "> bpm : 122"]
 ];
 
-const SPEED_BASE=26,SPEED_END=40,JITTER=6,STUTTER_PROB=0.12,STUTTER_MAX=160,SEARCH_PAUSE=1200,BREATH=250;
-const out=document.getElementById("out"),usb=document.getElementById("usb");
-const rnd=(a,b)=>Math.random()*(b-a)+a,wait=ms=>new Promise(r=>setTimeout(r,ms));
+const SPEED_BASE=30, SPEED_END=40, JITTER=5, STUTTER_PROB=0.1, STUTTER_MAX=120;
+const SEARCH_PAUSE=1200, BREATH=200;
+const out=document.getElementById("out"), usb=document.getElementById("usb");
+const rnd=(a,b)=>Math.random()*(b-a)+a, wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 function setLogWidth(){
   const probe=document.createElement("span");
   probe.textContent="> log : ";
-  probe.style.position="absolute";probe.style.visibility="hidden";probe.style.whiteSpace="pre";
+  probe.style.position="absolute";probe.style.visibility="hidden";
+  probe.style.whiteSpace="pre";
   probe.style.fontFamily=getComputedStyle(out).fontFamily;
   probe.style.fontSize=getComputedStyle(out).fontSize;
   document.body.appendChild(probe);
@@ -95,6 +144,7 @@ async function typeLine(text, speed=SPEED_BASE){
   const cur=document.createElement("span");
   cur.className="cursor blink"; cur.textContent="▮";
   line.appendChild(span); line.appendChild(cur); out.appendChild(line);
+
   for(let i=0;i<text.length;i++){
     span.innerHTML=text.slice(0,i+1)
       .replace(/^\s*#next_transmission\s*:/i,'<span class="tag">#next_transmission</span> :')
@@ -118,27 +168,37 @@ async function typeLogLine(fullText){
     content.textContent=t.slice(0,i+1);
     let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
     if(Math.random()<STUTTER_PROB) d+=Math.floor(rnd(30,STUTTER_MAX));
-    const ch=t[i];
-    if(ch===','||ch==='—') d+=Math.floor(rnd(80,180));
+    if((t[i]===','||t[i]==='—')) d+=Math.floor(rnd(80,180));
     if(!paused && i>=halfway){ d+=1000; paused=true; }
     await wait(d);
   }
   await wait(BREATH);
+  lastLogContent = content;
 }
+
+let lastLogContent=null;
 
 (async function run(){
   setLogWidth();
   const v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)].slice();
   v.push(Math.random()<0.7?ENDINGS[0]:ENDINGS[1]);
 
-  await typeLine(v[0]); await wait(SEARCH_PAUSE);
+  await typeLine(v[0]);
+  await wait(SEARCH_PAUSE);
   await typeLogLine(v[1]);
   await typeLine(v[2]);
   await typeLine(v[3]);
   await typeLine(v[4]);
-  await typeLine(v[5],SPEED_END);
+  await typeLine(v[5], SPEED_END);
 
-  setTimeout(()=>usb.classList.add("visible"),500);
+  setTimeout(()=>{
+    usb.classList.add("visible");
+    if(lastLogContent){
+      lastLogContent.style.animation="none";
+      void lastLogContent.offsetWidth;
+      lastLogContent.style.animation="pulseText 3.8s ease-in-out infinite";
+    }
+  },500);
 })();
 </script>
 </body>
