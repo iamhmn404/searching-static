@@ -7,47 +7,54 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#000;--fg:#fff;--alert:#ff2f4d;--ntx:#7EE7FF}
+
+/* Base */
 html,body{height:100%}
-body{margin:0;background:#000;color:#fff;font-family:"Share Tech Mono","Courier New",monospace;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:24px}
-
-/* CRT shimmer */
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:repeating-linear-gradient(transparent 0 1.4px,rgba(255,255,255,.14)1.4px 2.7px),
-             radial-gradient(rgba(255,255,255,.08),transparent 65%);
-  mix-blend-mode:screen;opacity:.62;animation:crtJitter 1.1s steps(8,end) infinite}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(transparent 35%,rgba(0,0,0,.52) 75%),
-             repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,transparent 1px 3px);
-  mix-blend-mode:screen;opacity:.36;animation:noiseShift .9s steps(7,end) infinite}
-@keyframes crtJitter{0%,100%{transform:none}40%{transform:translateX(.6px)}70%{transform:translateX(-.6px)}}
-@keyframes noiseShift{0%{transform:none}50%{transform:translate(.8px,-.7px)}100%{transform:none}}
-
-.wrap{position:relative;z-index:1;width:min(92vw,780px);display:grid;gap:28px;place-items:center}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Share Tech Mono","Courier New",monospace;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  padding:24px;
+}
+.wrap{position:relative;width:min(92vw,780px);display:grid;gap:28px;place-items:center}
 pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 
+/* Cursor / tags */
 .cursor{display:inline-block;width:.65ch}
 .blink{animation:blink .55s step-end infinite}
 @keyframes blink{50%{opacity:0}}
-
 .tag{color:var(--ntx);text-shadow:0 0 3px rgba(126,231,255,.96),0 0 6px rgba(126,231,255,.75),0 0 12px rgba(126,231,255,.55),0 0 20px rgba(126,231,255,.35)}
 .date{color:#fff;text-shadow:0 0 3px var(--alert),0 0 6px var(--alert),0 0 12px var(--alert);animation:twinkle .9s step-end infinite}
 @keyframes twinkle{50%{opacity:0}}
 
-/* brighter, quicker log glow (non-blocking) */
-.log-flare{animation:logFlare .9s ease-out 1}
-.log-echo{animation:logEcho .7s ease-out 1}
+/* Log flare (brighter) */
+.log-flare{animation:logFlare 1.2s ease-out 1}
+.log-echo{animation:logEcho 1.1s ease-out 1}
 @keyframes logFlare{
   0%{text-shadow:none}
-  25%{text-shadow:0 0 10px rgba(255,255,255,1),0 0 22px rgba(255,255,255,.85)}
+  22%{text-shadow:
+      0 0 14px rgba(255,255,255,1),
+      0 0 28px rgba(255,255,255,1),
+      0 0 46px rgba(210,180,255,.7),
+      0 0 68px rgba(210,180,255,.55)}
   100%{text-shadow:none}
 }
 @keyframes logEcho{
   0%{text-shadow:none}
-  40%{text-shadow:0 0 7px rgba(255,255,255,.8),0 0 16px rgba(255,255,255,.55)}
+  35%{text-shadow:
+      0 0 10px rgba(255,255,255,.9),
+      0 0 24px rgba(210,180,255,.6),
+      0 0 44px rgba(210,180,255,.4)}
   100%{text-shadow:none}
 }
 
-/* USB image: fade-in then ember flicker using drop-shadow on the PNG (no rectangle) */
+/* Hanging indent for LOG only (align wraps under “log :”) */
+.hang-log{
+  padding-left: 8ch;        /* width of “> log : ” */
+  text-indent: -8ch;
+}
+
+/* USB (PNG only): slow fade-in then ember flicker */
 .usb{position:relative;width:min(75vw,520px);aspect-ratio:16/9;opacity:0;transition:opacity 2.5s ease}
 .usb img{width:100%;height:100%;object-fit:contain;display:block;filter:
   drop-shadow(0 0 10px rgba(255,255,255,.85))
@@ -56,97 +63,25 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px
   drop-shadow(0 0 52px rgba(210,180,255,.35))}
 .usb.flicker{opacity:.85}
 .usb.flicker img{animation:emberBreath 3.8s ease-in-out infinite}
-@keyframes emberBreath{0%,100%{filter:
-  drop-shadow(0 0 6px rgba(255,255,255,.6))
-  drop-shadow(0 0 14px rgba(255,255,255,.5))
-  drop-shadow(0 0 24px rgba(210,180,255,.4))
-  drop-shadow(0 0 40px rgba(210,180,255,.28))}
-50%{filter:
-  drop-shadow(0 0 12px rgba(255,255,255,.95))
-  drop-shadow(0 0 22px rgba(255,255,255,.8))
-  drop-shadow(0 0 36px rgba(210,180,255,.6))
-  drop-shadow(0 0 54px rgba(210,180,255,.45))}}
+@keyframes emberBreath{
+  0%,100%{filter:
+    drop-shadow(0 0 6px rgba(255,255,255,.6))
+    drop-shadow(0 0 14px rgba(255,255,255,.5))
+    drop-shadow(0 0 24px rgba(210,180,255,.4))
+    drop-shadow(0 0 40px rgba(210,180,255,.28))}
+  50%{filter:
+    drop-shadow(0 0 12px rgba(255,255,255,.95))
+    drop-shadow(0 0 22px rgba(255,255,255,.8))
+    drop-shadow(0 0 36px rgba(210,180,255,.6))
+    drop-shadow(0 0 54px rgba(210,180,255,.45))}
+}
 
 @media (prefers-reduced-motion:reduce){
-  .blink,.tag,.date,.log-flare,.log-echo,body::before,body::after,.usb img{animation:none!important;text-shadow:none!important}
+  .blink,.date,.log-flare,.log-echo,.usb img{animation:none!important;text-shadow:none!important}
 }
 </style>
 </head>
 <body>
   <div class="wrap">
     <pre id="out"></pre>
-    <div id="usb" class="usb"><img src="usb.png" alt="recovered usb"></div>
-  </div>
-
-<script>
-const ENDINGS=["#next_transmission : march 2026","#estimated_intercept : march 2026"];
-const VARIANTS=[
-  ["> searching static…","> log : low-frequency hum detected — waiting for resonance, waiting for contact.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
-  ["> searching static…","> log : residual loop fragments detected — unfinished, magnetic, raw.","> status : Δ-LOST SP//ARK","> signal : sub-bass residue","> bpm : 122"],
-  ["> searching static…","> log : residual loop fragment detected — something quiet, something human.","> status : Δ-WAVECATCHER","> signal : sub-harmonic trace","> bpm : 122"],
-  ["> searching static…","> log : faint harmonic pulse detected — energy rising.","> status : Δ-LOST SP//ARK","> signal : rhythmic ghost pattern","> bpm : 122"]
-];
-
-const SPEED_BASE=18, JITTER=8, STUTTER_MAX=70, STUTTER_PROB=0.28, SEARCH_PAUSE=1600;
-const out=document.getElementById("out"), usb=document.getElementById("usb");
-const rnd=(a,b)=>Math.random()*(b-a)+a, wait=ms=>new Promise(r=>setTimeout(r,ms));
-
-async function typeLine(text,{isLog=false}={}){
-  const line=document.createElement("div");
-  const span=document.createElement("span");
-  const cursor=document.createElement("span"); cursor.className="cursor blink"; cursor.textContent="▮";
-  line.appendChild(span); line.appendChild(cursor); out.appendChild(line);
-
-  for(let i=0;i<text.length;i++){
-    const partial=text.slice(0,i+1)
-      .replace(/^\s*#next_transmission\s*:/i,'<span class="tag">#next_transmission</span> :')
-      .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> :')
-      .replace(/march 2026/gi,'<span class="date">march 2026</span>');
-    span.innerHTML=partial;
-
-    let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
-    if(isLog && Math.random()<STUTTER_PROB) d+=Math.floor(rnd(15,STUTTER_MAX));
-    await wait(d);
-  }
-
-  if(isLog){
-    span.classList.add('log-flare');
-    setTimeout(()=>span.classList.add('log-echo'),900); // overlap, non-blocking
-  }
-  return;
-}
-
-(async function run(){
-  const v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)].slice();
-  v.push(Math.random()<0.7?ENDINGS[0]:ENDINGS[1]);
-
-  await typeLine(v[0]); await wait(SEARCH_PAUSE);
-  await typeLine(v[1],{isLog:true});
-  await typeLine(v[2]); await typeLine(v[3]); await typeLine(v[4]);
-
-  const final=document.createElement("div"); out.appendChild(final);
-  final.innerHTML=v[5]
-    .replace(/^\s*#next_transmission\s*:/i,'<span class="tag">#next_transmission</span> : ')
-    .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> : ')
-    .replace(/march 2026/gi,'<span class="date">march 2026</span>');
-
-  setTimeout(()=>{ usb.style.opacity="1"; }, 200);            // start 200ms after final line renders
-  setTimeout(()=>{ usb.classList.add('flicker'); }, 3300);    // begin ember flicker after slow fade-in
-
-  (function bursts(){
-    const delay=rnd(400,1200);
-    setTimeout(()=>{
-      const hits=2+Math.floor(Math.random()*3);
-      for(let i=0;i<hits;i++){
-        setTimeout(()=>{
-          usb.style.opacity=".95";
-          setTimeout(()=>{usb.style.opacity="1"},90+Math.random()*90);
-        }, i*80 + Math.random()*60);
-      }
-      bursts();
-    },delay);
-  })();
-})();
-</script>
-</body>
-</html>
+    <div id="usb" class="usb"><img src="usb.png" alt="re
