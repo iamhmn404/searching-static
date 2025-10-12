@@ -7,63 +7,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0b0d10; --fg:#e9e9ea;
-  --accent:#A56BFF;  /* sigil/mark accent */
-  --tag:#7EE7FF;     /* #next_transmission */
-  --alert:#ff2f4d;   /* red blink for date */
+  --bg:#000000;   /* jet black */
+  --fg:#ffffff;   /* white text */
+  --alert:#ff2f4d;/* blink for date */
 }
 
-/* base layout */
 html,body{height:100%}
 body{
   margin:0; background:var(--bg); color:var(--fg);
   font-family:"Share Tech Mono","Courier New",monospace;
   display:flex; align-items:center; justify-content:center;
-  padding:calc(env(safe-area-inset-top) + 24px) 20px calc(env(safe-area-inset-bottom) + 24px);
-  overflow:hidden;
+  padding:24px; overflow:hidden;
 }
 
-/* --- CRT / scan-lines (fixed) --- */
-body::before{
-  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
-  /* horizontal scanlines + soft bloom */
-  background:
-    repeating-linear-gradient(transparent 0 1.6px, rgba(255,255,255,.14) 1.6px 2.9px),
-    radial-gradient(rgba(255,255,255,.08), transparent 65%);
-  mix-blend-mode:screen;   /* <— makes lines visible on black */
-  opacity:.58;
-  animation:crtJitter 1.1s steps(8,end) infinite;
-}
-body::after{
-  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
-  /* vertical scanlines + vignette */
-  background:
-    radial-gradient(transparent 35%, rgba(0,0,0,.5) 75%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, transparent 1px 3px);
-  mix-blend-mode:screen;
-  opacity:.35;
-  animation:noiseShift .7s steps(6,end) infinite;
-}
-@keyframes crtJitter{0%,100%{transform:none}30%{transform:translateX(.5px)}60%{transform:translateX(-.5px)}}
-@keyframes noiseShift{0%{transform:none}50%{transform:translate(.7px,-.6px)}100%{transform:none}}
+.wrap{ position:relative; width:min(92vw,780px); display:grid; gap:28px; place-items:center; }
+pre{ margin:0; max-width:64ch; white-space:pre-wrap; font-size:clamp(14px,2.6vw,19px); line-height:1.55; }
 
-/* content */
-.wrap{ position:relative; z-index:1; width:min(92vw,780px); display:grid; gap:28px; place-items:center; }
-pre{
-  margin:0; max-width:64ch; white-space:pre-wrap;
-  font-size:clamp(14px,2.6vw,19px); line-height:1.55;
-}
-
-/* emphasis */
-.kv .k{opacity:.85; letter-spacing:.04em}
-.kv .v{opacity:.92}
-.mark{color:var(--accent)}
 .cursor{display:inline-block; width:.65ch;}
 .blink{animation:blink .55s step-end infinite}
 @keyframes blink{50%{opacity:0}}
 
-/* #next_transmission and date */
-.tag-ntx{color:var(--tag); text-shadow:0 0 4px rgba(126,231,255,.9), 0 0 10px rgba(126,231,255,.5)}
 .blink-2026{
   color:#fff;
   text-shadow:0 0 3px var(--alert),0 0 6px var(--alert),0 0 12px var(--alert);
@@ -71,45 +34,13 @@ pre{
 }
 @keyframes twinkle{50%{opacity:0}}
 
-/* --- USB video block --- */
-.usb{
-  position:relative; width:min(75vw,520px); aspect-ratio:16/9;
-  opacity:0; transition:opacity 1.6s ease-in; filter:contrast(125%) brightness(102%);
-}
-.usb video{
-  width:100%; height:100%; object-fit:contain; display:block;
-  filter:contrast(115%) brightness(102%);
-}
-.usb.glow video{ animation:bodyPulse 3s ease-in-out infinite }
+.usb{position:relative; width:min(75vw,520px); aspect-ratio:16/9; opacity:0; transition:opacity 1.6s ease-in; filter:contrast(125%) brightness(102%)}
+.usb video{width:100%; height:100%; object-fit:contain; display:block; filter:contrast(115%) brightness(102%)}
+.usb.glow video{animation:bodyPulse 3s ease-in-out infinite}
 @keyframes bodyPulse{0%,100%{filter:contrast(115%) brightness(102%)}50%{filter:contrast(135%) brightness(106%)}}
 
-/* ambient glow “edges” around the video frame (box-y but effective) */
-.usb::before,.usb::after{
-  content:""; position:absolute; inset:0; pointer-events:none; opacity:0; mix-blend-mode:screen;
-  border-radius:6px;
-}
-.usb.glow::before{
-  box-shadow:
-    0 0 6px rgba(255,255,255,.55),
-    0 0 14px rgba(255,255,255,.45),
-    0 0 24px rgba(255,255,255,.35),
-    0 0 40px rgba(255,255,255,.25);
-  opacity:.75; animation:shimmer 2s ease-in-out infinite;
-}
-.usb.glow::after{ /* edge flash pulse, toggled by JS */
-  box-shadow:
-    0 0 10px rgba(255,255,255,.9),
-    0 0 20px rgba(255,255,255,.75),
-    0 0 34px rgba(255,255,255,.6),
-    0 0 52px rgba(255,255,255,.45);
-  opacity:0;
-}
-@keyframes shimmer{0%,100%{opacity:.45; transform:none}50%{opacity:.9; transform:translateX(.7px)}}
-@keyframes edgeFlash{0%{opacity:0}10%{opacity:1}25%{opacity:.6}50%,100%{opacity:0}}
-
-/* reduced motion */
 @media (prefers-reduced-motion:reduce){
-  .blink,.usb.glow video, .usb.glow::before, .usb.glow::after, body::before, body::after{animation:none !important}
+  .blink,.usb.glow video{animation:none !important}
   .usb{opacity:.95 !important; transition:none !important}
 }
 </style>
@@ -125,91 +56,72 @@ pre{
   </div>
 
 <script>
-/* Single-variant copy for aesthetic sign-off (you can swap to another later) */
+/* Sequence per your spec */
 const LINES = [
-  "> searching static…",
-  "> mark : \\u0394-SP//ARK_01",
-  "> signal : sub-bass residue",
-  "> bpm : unknown",
-  "",
-  "a pulse hums faintly beneath the noise —",
-  "silence is only the ambience before the beat.",
-  "",
-  "next transmission : march 2026"
-].map(s=>s.replace("\\u0394","Δ")); // render Δ safely
+  "> searching static…",                                   // shows alone w/ blink for 2.5s
+  "a pulse hums faintly beneath the noise",                // then reveal this
+  "",                                                      // blank line
+  "> status : \u0394- LOST SP//ARK_01",                    // with trailing blinking cursor
+  "> signal : sub-bass residue",                           // with trailing blinking cursor
+  "> bpm : unknown",                                       // with trailing blinking cursor
+  "next transmission : march 2026"                         // date blinks red
+];
 
-/* typing @ 30 ms/char */
 const out = document.getElementById("out");
-function typeLine(text,{speed=30,pauseAfter=0,showCursor=true,kv=false}={}){
+const usb = document.getElementById("usb");
+
+/* type a line (optional cursor at the end) */
+function typeLine(text,{speed=30,pauseAfter=0,showCursor=false}={}){
   return new Promise(res=>{
     const line=document.createElement("div");
-    if(kv) line.className="kv";
     const span=document.createElement("span");
     line.appendChild(span);
     let cursor=null;
-    if(showCursor){ cursor=document.createElement("span"); cursor.className="cursor blink"; cursor.textContent="▮"; line.appendChild(cursor); }
+    if(showCursor){
+      cursor=document.createElement("span");
+      cursor.className="cursor blink";
+      cursor.textContent="▮";
+      line.appendChild(cursor);
+    }
     out.appendChild(line);
     let i=0;
     (function tick(){
-      // inline styling: mark highlight + hashtag transform
-      span.innerHTML = text.slice(0,++i)
-        .replace(/^(> mark : )(.*)$/i,(_,a,b)=>a+'<span class="mark">'+b+'</span>')
-        .replace(/^#next_transmission/i,'<span class="tag-ntx">#next_transmission</span>');
+      span.textContent = text.slice(0,++i);
       if(i<text.length) setTimeout(tick,speed); else setTimeout(res,pauseAfter);
     })();
   });
 }
 
-/* USB glow + edge flash bursts */
-const usb = document.getElementById("usb");
-function startUsb(){
-  usb.classList.add("glow"); usb.style.opacity="1";
-  // edge flash loop (0.5–1.4s, 2–4 hits)
-  const flash=()=>{ usb.classList.add("edge"); usb.style.setProperty("--edge","1"); usb.classList.add("edge-run");
-    usb.classList.add("edge"); usb.classList.add("edge-run");
-    usb.classList.add("edgePulse");
-    usb.classList.add("edge-flash");
-    usb.classList.add("edge-pulse");
-    usb.classList.add("edge");          /* ensure class exists */
-    usb.classList.add("edge-run");
-    usb.classList.add("edgePulse");
-    usb.classList.add("edge-flash");
-    usb.classList.add("edge-pulse");
-    usb.classList.add("edge");          /* dup is fine; we remove after timeout */
-    usb.classList.add("edge-flash");
-    usb.style.animation="edgeFlash .35s steps(1,end) 1";
-    usb.classList.add("edge");
-    setTimeout(()=>{ usb.style.animation="none"; }, 360);
-  };
-  (function loop(){
-    setTimeout(()=>{
-      const n=2+Math.floor(Math.random()*3);
-      for(let i=0;i<n;i++) setTimeout(()=>{ usb.style.setProperty("--f","1"); usb.classList.add("edge"); usb.querySelector("video").style.filter="contrast(125%) brightness(103%)"; usb.style.animation="edgeFlash .35s steps(1,end) 1"; setTimeout(()=>{ usb.style.animation="none"; }, 360);}, i*70+Math.random()*50);
-      loop();
-    }, 500 + Math.random()*900);
-  })();
-}
-
-/* run sequence */
 (async function run(){
-  await typeLine(LINES[0], {speed:30, pauseAfter:800, showCursor:true});
-  await typeLine(LINES[1], {speed:30, pauseAfter:60, kv:true});
-  await typeLine(LINES[2], {speed:30, pauseAfter:60, kv:true});
-  await typeLine(LINES[3], {speed:30, pauseAfter:200, kv:true, showCursor:false});
+  // 1) Show "searching static…" with a blinking cursor for 2.5s (no reveal yet)
+  {
+    const line=document.createElement("div");
+    const span=document.createElement("span");
+    span.textContent = LINES[0];
+    const cursor=document.createElement("span");
+    cursor.className="cursor blink";
+    cursor.textContent="▮";
+    line.appendChild(span); line.appendChild(cursor); out.appendChild(line);
+    await new Promise(r=>setTimeout(r,2500));
+  }
 
-  await typeLine(LINES[4], {speed:30, pauseAfter:0, showCursor:false});
-  await typeLine(LINES[5], {speed:30, pauseAfter:20, showCursor:false});
-  await typeLine(LINES[6], {speed:30, pauseAfter:300, showCursor:false});
-  await typeLine(LINES[7], {speed:30, pauseAfter:0, showCursor:false});
+  // 2) Then reveal the rest (typed)
+  await typeLine(LINES[1], {speed:30, pauseAfter:120, showCursor:false});
+  await typeLine(LINES[2], {speed:30, pauseAfter:0, showCursor:false}); // blank spacer
 
-  // final line: convert to #next_transmission and blink the date
-  const last = document.createElement("div");
+  // Three system lines, each ending with a blinking cursor
+  await typeLine(LINES[3], {speed:30, pauseAfter:60, showCursor:true});
+  await typeLine(LINES[4], {speed:30, pauseAfter:60, showCursor:true});
+  await typeLine(LINES[5], {speed:30, pauseAfter:200, showCursor:true});
+
+  // Final line: blink "march 2026" in red
+  const last=document.createElement("div");
   out.appendChild(last);
-  last.innerHTML = LINES[8]
-    .replace(/next transmission\s*:/i,'<span class="tag-ntx">#next_transmission</span> : ')
-    .replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
+  last.innerHTML = LINES[6].replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
 
-  startUsb();
+  // fade in USB loop
+  usb.classList.add("glow");
+  usb.style.opacity="1";
 })();
 </script>
 </body>
