@@ -42,21 +42,24 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px
   100%{text-shadow:none}
 }
 
-/* LOG line: prefix | wrapping content | cursor (always aligns on iOS) */
+/* LOG line: prefix | wrapping content | cursor (iOS-safe) */
 .loggrid{
   display:grid;
-  grid-template-columns:9ch 1fr auto;
+  grid-template-columns:9ch 1fr auto; /* width of '> log : ' */
   column-gap:.6ch;
   max-width:64ch;
 }
 .loggrid .prefix{white-space:pre}
-.loggrid .content{white-space:pre-wrap}
+.loggrid .content{
+  white-space:normal;          /* <-- fixes preserved spaces on wrap */
+  overflow-wrap:anywhere;      /* <-- guarantees clean wrap on iOS */
+}
 .loggrid .cur{white-space:pre;margin-left:-0.4ch}
 
 /* USB: left-nudged, 2.5s fade, ember flicker */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
-  opacity:0;transition:opacity 2.5s ease-in;
+  opacity:0;transition:opacity 2.5s ease-in;  /* 2.5s fade */
   transform:translateX(-3%) translateY(-8%);
   margin-top:-14px;
 }
@@ -130,7 +133,7 @@ async function typeLogLine(fullText){
   const cur=document.createElement("span");  cur.className="cur cursor blink"; cur.textContent="▮";
   row.appendChild(pref); row.appendChild(cnt); row.appendChild(cur); out.appendChild(row);
 
-  const t=fullText.replace(/^>\s*log\s*:\s*/i,"");
+  const t=fullText.replace(/^>\s*log\s*:\s*/i,""); // content only
   const halfway=Math.floor(t.length/2); let half=false;
 
   for(let i=0;i<t.length;i++){
@@ -160,7 +163,7 @@ async function typeLogLine(fullText){
     .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> : ')
     .replace(/march 2026/gi,'<span class="date">march 2026</span>');
 
-  /* start USB fade 0.5s after final line, fade over 2.5s, then flicker */
+  /* start USB fade 0.5s after final line, fade over 2.5s, flicker at 3.0s */
   setTimeout(()=>{usb.classList.add("visible");},500);
   setTimeout(()=>{usb.classList.add("flicker");},3000);
 
