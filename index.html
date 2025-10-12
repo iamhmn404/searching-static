@@ -53,20 +53,22 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;
   100%{text-shadow:none}
 }
 
-/* Log grid: keeps wrap aligned + cursor tidy */
-.loggrid{
-  display:grid;
-  grid-template-columns:9ch 1fr auto;
-  column-gap:.6ch;max-width:64ch;
+/* Hanging indent for log: deeper on small screens */
+.hang-log{
+  padding-left:8ch;
+  text-indent:-8ch;
 }
-.loggrid .prefix{white-space:pre}
-.loggrid .content{white-space:pre-wrap}
-.loggrid .cur{white-space:pre;margin-left:-0.4ch}
+@media (max-width:600px){
+  .hang-log{
+    padding-left:10ch;
+    text-indent:-10ch;
+  }
+}
 
-/* USB: left aligned, delayed slow fade, ember flicker */
+/* USB fade + flicker */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
-  opacity:0;transition:opacity 3.5s ease-in;
+  opacity:0;transition:opacity 3s ease-in;   /* 3s fade */
   transform:translateX(-3%) translateY(-8%);
   margin-top:-14px;
 }
@@ -79,6 +81,17 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;
     drop-shadow(0 0 34px rgba(210,180,255,.5))
     drop-shadow(0 0 52px rgba(210,180,255,.35));
 }
+
+/* faint ground glow */
+.usb::after{
+  content:"";position:absolute;inset:10% -10% -5% -10%;
+  background:radial-gradient(ellipse at center,
+    rgba(255,255,255,.12) 0%,rgba(54,1,63,.05) 60%,transparent 100%);
+  opacity:0;transition:opacity 2.8s ease-in;
+}
+.usb.visible::after{opacity:0.5}
+
+/* ember flicker */
 .usb.flicker{opacity:.85}
 .usb.flicker img{animation:emberBreath 3.8s ease-in-out infinite}
 @keyframes emberBreath{
@@ -92,6 +105,16 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;
     drop-shadow(0 0 22px rgba(255,255,255,.8))
     drop-shadow(0 0 36px rgba(210,180,255,.6))
     drop-shadow(0 0 54px rgba(210,180,255,.45))}
+}
+
+/* === PATCH: pulse the ground reflection with the ember flicker === */
+.usb.flicker::after{
+  animation: groundPulse 3.8s ease-in-out infinite .2s both;
+}
+@keyframes groundPulse{
+  0%  { opacity: .32; transform: scale(1);    }
+  50% { opacity: .58; transform: scale(1.03); }
+  100%{ opacity: .32; transform: scale(1);    }
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -139,55 +162,40 @@ const SPEED_BASE=16,JITTER=6,STUTTER_PROB=0.12,STUTTER_MAX=160,SEARCH_PAUSE=1400
 const out=document.getElementById("out"),usb=document.getElementById("usb");
 const rnd=(a,b)=>Math.random()*(b-a)+a,wait=ms=>new Promise(r=>setTimeout(r,ms));
 
-async function typeSimpleLine(text){
+async function typeLine(text,{isLog=false}={}){
   const line=document.createElement("div");
   const span=document.createElement("span");
   const cur=document.createElement("span");cur.className="cursor blink";cur.textContent="▮";
   line.appendChild(span);line.appendChild(cur);out.appendChild(line);
+  if(isLog) line.classList.add("hang-log");
 
-  for(let i=0;i<text.length;i++){
-    span.innerHTML=text.slice(0,i+1)
-      .replace(/^\s*#next_transmission\s*:/i,'<span class="tag">#next_transmission</span> :')
-      .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> :')
-      .replace(/march 2026/gi,'<span class="date">march 2026</span>');
-    const d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
-    await wait(d);
-  }
-}
+  const t=text.replace(/^>\s*log\s*:\s*/i,"> log : ");
+  const halfway=Math.floor(t.length/2);let halfPause=false;
 
-async function typeLogLine(fullText){
-  const container=document.createElement("div");
-  container.className="loggrid";
-  const prefix=document.createElement("span");prefix.className="prefix";prefix.textContent="> log : ";
-  const content=document.createElement("span");content.className="content";
-  const cur=document.createElement("span");cur.className="cur cursor blink";cur.textContent="▮";
-  container.appendChild(prefix);container.appendChild(content);container.appendChild(cur);
-  out.appendChild(container);
-
-  const text=fullText.replace(/^>\s*log\s*:\s*/i,"");
-  const halfway=Math.floor(text.length/2);
-  let didHalfPause=false;
-
-  for(let i=0;i<text.length;i++){
-    content.textContent=text.slice(0,i+1);
+  for(let i=0;i<t.length;i++){
+    span.textContent=t.slice(0,i+1);
     let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
-    if(Math.random()<STUTTER_PROB)d+=Math.floor(rnd(30,STUTTER_MAX));
-    const ch=text[i];
-    if(ch===','||ch==='—'){d+=Math.floor(rnd(80,180));}
-    if(!didHalfPause&&i>=halfway){d+=1000;didHalfPause=true;} // 1s deliberate pause
+    if(isLog){
+      if(Math.random()<STUTTER_PROB)d+=Math.floor(rnd(30,STUTTER_MAX));
+      if(t[i]===","||t[i]==="—")d+=Math.floor(rnd(80,180));
+      if(!halfPause&&i>=halfway){d+=1000;halfPause=true;}
+    }
     await wait(d);
   }
-  content.classList.add('log-flare');
-  setTimeout(()=>content.classList.add('log-echo'),900);
+
+  if(isLog){
+    span.classList.add('log-flare');
+    setTimeout(()=>span.classList.add('log-echo'),900);
+  }
 }
 
 (async function run(){
   const v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)].slice();
   v.push(Math.random()<0.7?ENDINGS[0]:ENDINGS[1]);
 
-  await typeSimpleLine(v[0]);await wait(SEARCH_PAUSE);
-  await typeLogLine(v[1]);
-  await typeSimpleLine(v[2]);await typeSimpleLine(v[3]);await typeSimpleLine(v[4]);
+  await typeLine(v[0]);await wait(SEARCH_PAUSE);
+  await typeLine(v[1],{isLog:true});
+  await typeLine(v[2]);await typeLine(v[3]);await typeLine(v[4]);
 
   const final=document.createElement("div");out.appendChild(final);
   final.innerHTML=v[5]
@@ -195,9 +203,9 @@ async function typeLogLine(fullText){
     .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> : ')
     .replace(/march 2026/gi,'<span class="date">march 2026</span>');
 
-  /* wait 2s, then start slow 3.5s fade */
-  setTimeout(()=>{usb.classList.add("visible");},2000);
-  setTimeout(()=>{usb.classList.add("flicker");},5500);
+  // 1s pause, then 3s fade
+  setTimeout(()=>{usb.classList.add("visible");},1000);
+  setTimeout(()=>{usb.classList.add("flicker");},4000);
 
   (function bursts(){
     const delay=rnd(400,1200);
