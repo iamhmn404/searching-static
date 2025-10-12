@@ -6,19 +6,17 @@
 <title>I AM HUMAN — Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#000;--fg:#fff;--alert:#ff2f4d;--ntx:#7EE7FF}
+:root{--bg:#000;--fg:#fff;--alert:#ff2f4d;--ntx:#7EE7FF;--logw:0px}
 
 html,body{height:100%}
 body{
-  margin:0;background:var(--bg);color:var(--fg);
+  margin:0;background:#000;color:#fff;
   font-family:"Share Tech Mono","Courier New",monospace;
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;padding:24px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;padding:24px;
 }
 
 .wrap{position:relative;width:min(92vw,780px);display:grid;gap:28px;justify-items:start;align-items:start}
-
-pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
+pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 
 .cursor{display:inline-block;width:.65ch}
 .blink{animation:blink .55s step-end infinite}
@@ -28,7 +26,6 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px
 .date{color:#fff;text-shadow:0 0 4px var(--alert),0 0 10px var(--alert);animation:twinkle .9s step-end infinite}
 @keyframes twinkle{50%{opacity:0}}
 
-/* brighter ghost flare on the LOG line */
 .log-flare{animation:logFlare 1.2s ease-out 1}
 .log-echo{animation:logEcho 1.0s ease-out 1}
 @keyframes logFlare{
@@ -42,26 +39,22 @@ pre{margin:0;max-width:64ch;white-space:pre-wrap;font-size:clamp(14px,2.6vw,19px
   100%{text-shadow:none}
 }
 
-/* LOG line: prefix | wrapping content | cursor (iOS-safe) */
-.loggrid{
-  display:grid;
-  grid-template-columns:9ch 1fr auto; /* width of '> log : ' */
-  column-gap:.6ch;
-  max-width:64ch;
+/* LOG line: absolute prefix + margin-left content (rock-solid on iOS) */
+.logline{position:relative;max-width:64ch;min-height:1.6em}
+.logline .prefix{
+  position:absolute;left:0;top:0;white-space:pre;
 }
-.loggrid .prefix{white-space:pre}
-.loggrid .content{
-  white-space:normal;          /* <-- fixes preserved spaces on wrap */
-  overflow-wrap:anywhere;      /* <-- guarantees clean wrap on iOS */
+.logline .content{
+  display:inline;white-space:normal;overflow-wrap:anywhere;
+  margin-left:var(--logw); /* set via JS to exact px width of prefix */
 }
-.loggrid .cur{white-space:pre;margin-left:-0.4ch}
+.logline .cur{display:inline}
 
-/* USB: left-nudged, 2.5s fade, ember flicker */
+/* USB: left-nudged, fade 2.5s, then ember flicker */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
-  opacity:0;transition:opacity 2.5s ease-in;  /* 2.5s fade */
-  transform:translateX(-3%) translateY(-8%);
-  margin-top:-14px;
+  opacity:0;transition:opacity 2.5s ease-in;
+  transform:translateX(-3%) translateY(-8%);margin-top:-14px;
 }
 .usb.visible{opacity:0.88}
 .usb img{
@@ -110,6 +103,21 @@ const SPEED_BASE=16,JITTER=6,STUTTER_PROB=0.12,STUTTER_MAX=160,SEARCH_PAUSE=1400
 const out=document.getElementById("out"),usb=document.getElementById("usb");
 const rnd=(a,b)=>Math.random()*(b-a)+a,wait=ms=>new Promise(r=>setTimeout(r,ms));
 
+/* measure "> log : " width and set --logw */
+function setLogWidth(){
+  const probe=document.createElement("span");
+  probe.textContent="> log : ";
+  probe.style.position="absolute";
+  probe.style.visibility="hidden";
+  probe.style.whiteSpace="pre";
+  probe.style.fontFamily=getComputedStyle(out).fontFamily;
+  probe.style.fontSize=getComputedStyle(out).fontSize;
+  document.body.appendChild(probe);
+  const w=probe.getBoundingClientRect().width;
+  document.body.removeChild(probe);
+  document.documentElement.style.setProperty("--logw", w+"px");
+}
+
 async function typeSimpleLine(text){
   const line=document.createElement("div");
   const span=document.createElement("span");
@@ -127,29 +135,31 @@ async function typeSimpleLine(text){
 }
 
 async function typeLogLine(fullText){
-  const row=document.createElement("div"); row.className="loggrid";
-  const pref=document.createElement("span"); pref.className="prefix"; pref.textContent="> log : ";
-  const cnt=document.createElement("span");  cnt.className="content";
-  const cur=document.createElement("span");  cur.className="cur cursor blink"; cur.textContent="▮";
-  row.appendChild(pref); row.appendChild(cnt); row.appendChild(cur); out.appendChild(row);
+  const row=document.createElement("div"); row.className="logline";
+  const prefix=document.createElement("span"); prefix.className="prefix"; prefix.textContent="> log : ";
+  const content=document.createElement("span"); content.className="content";
+  const cur=document.createElement("span"); cur.className="cur cursor blink"; cur.textContent="▮";
+  row.appendChild(prefix); row.appendChild(content); row.appendChild(cur); out.appendChild(row);
 
-  const t=fullText.replace(/^>\s*log\s*:\s*/i,""); // content only
-  const halfway=Math.floor(t.length/2); let half=false;
+  const t=fullText.replace(/^>\s*log\s*:\s*/i,"");
+  const halfway=Math.floor(t.length/2); let paused=false;
 
   for(let i=0;i<t.length;i++){
-    cnt.textContent=t.slice(0,i+1);
+    content.textContent=t.slice(0,i+1);
     let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
     if(Math.random()<STUTTER_PROB) d+=Math.floor(rnd(30,STUTTER_MAX));
     const ch=t[i];
     if(ch===','||ch==='—') d+=Math.floor(rnd(80,180));
-    if(!half && i>=halfway){ d+=1000; half=true; } // 1s “thinking” pause
+    if(!paused && i>=halfway){ d+=1000; paused=true; } // 1s “thinking” pause
     await wait(d);
   }
-  cnt.classList.add('log-flare');
-  setTimeout(()=>cnt.classList.add('log-echo'),900);
+  content.classList.add('log-flare');
+  setTimeout(()=>content.classList.add('log-echo'),900);
 }
 
 (async function run(){
+  setLogWidth();
+
   const v=VARIANTS[Math.floor(Math.random()*VARIANTS.length)].slice();
   v.push(Math.random()<0.7?ENDINGS[0]:ENDINGS[1]);
 
@@ -163,7 +173,7 @@ async function typeLogLine(fullText){
     .replace(/^\s*#estimated_intercept\s*:/i,'<span class="tag">#estimated_intercept</span> : ')
     .replace(/march 2026/gi,'<span class="date">march 2026</span>');
 
-  /* start USB fade 0.5s after final line, fade over 2.5s, flicker at 3.0s */
+  /* USB: 0.5s pause → 2.5s fade → flicker at 3.0s */
   setTimeout(()=>{usb.classList.add("visible");},500);
   setTimeout(()=>{usb.classList.add("flicker");},3000);
 
