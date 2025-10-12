@@ -66,14 +66,16 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 }
 
 /* --- Layout --- */
-.logline{position:relative;max-width:64ch;min-height:1.6em}
-.logline .prefix{position:absolute;left:0;top:0;white-space:pre}
 .logline .content{
-  display:inline-block;white-space:normal;overflow-wrap:anywhere;
+  display:inline;                /* inline keeps natural wrapping */
+  white-space:pre-wrap;          /* preserve spaces + allow wrapping */
+  overflow-wrap:break-word;      /* break long words if needed */
   margin-left:var(--logw);
+  vertical-align:top;
   will-change:text-shadow;
   animation:pulseText 3.8s ease-in-out infinite;
 }
+
 .logline .cur{display:inline}
 
 /* USB image */
