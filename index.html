@@ -7,17 +7,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#000000;   /* jet black */
-  --fg:#ffffff;   /* white text */
-  --alert:#ff2f4d;/* blink for date */
+  --bg:#000;    /* jet black */
+  --fg:#fff;    /* white text */
+  --alert:#ff2f4d;   /* red blink for date */
+  --neon:#7EE7FF;    /* cyan for #next_transmission */
 }
 
 html,body{height:100%}
 body{
-  margin:0; background:var(--bg); color:var(--fg);
-  font-family:"Share Tech Mono","Courier New",monospace;
-  display:flex; align-items:center; justify-content:center;
-  padding:24px; overflow:hidden;
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:"Share Tech Mono","Courier New",monospace;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; overflow:hidden;
 }
 
 .wrap{ position:relative; width:min(92vw,780px); display:grid; gap:28px; place-items:center; }
@@ -28,100 +29,160 @@ pre{ margin:0; max-width:64ch; white-space:pre-wrap; font-size:clamp(14px,2.6vw,
 @keyframes blink{50%{opacity:0}}
 
 .blink-2026{
-  color:#fff;
-  text-shadow:0 0 3px var(--alert),0 0 6px var(--alert),0 0 12px var(--alert);
-  animation:twinkle .9s step-end infinite;
+  color:#fff;
+  text-shadow:0 0 3px var(--alert),0 0 6px var(--alert),0 0 12px var(--alert);
+  animation:twinkle .9s step-end infinite;
 }
 @keyframes twinkle{50%{opacity:0}}
 
-.usb{position:relative; width:min(75vw,520px); aspect-ratio:16/9; opacity:0; transition:opacity 1.6s ease-in; filter:contrast(125%) brightness(102%)}
-.usb video{width:100%; height:100%; object-fit:contain; display:block; filter:contrast(115%) brightness(102%)}
-.usb.glow video{animation:bodyPulse 3s ease-in-out infinite}
-@keyframes bodyPulse{0%,100%{filter:contrast(115%) brightness(102%)}50%{filter:contrast(135%) brightness(106%)}}
+.tag-ntx{
+  color:var(--neon);
+  text-shadow:
+    0 0 3px rgba(126,231,255,.95),
+    0 0 6px rgba(126,231,255,.75),
+    0 0 12px rgba(126,231,255,.55),
+    0 0 20px rgba(126,231,255,.35);
+}
 
+/* one-time bright flash for the pulse line */
+.pulse-flash{
+  animation:pulseFlash 1s ease-out 1;
+}
+@keyframes pulseFlash{
+  0%  { text-shadow:none; }
+  30% { text-shadow:0 0 6px rgba(255,255,255,.9), 0 0 14px rgba(255,255,255,.7); }
+  100%{ text-shadow:none; }
+}
+
+/* USB block */
+.usb{position:relative; width:min(75vw,520px); aspect-ratio:16/9; opacity:1; filter:contrast(125%) brightness(102%)}
+.usb video, .usb img{width:100%; height:100%; object-fit:contain; display:block;}
+
+/* reduced motion */
 @media (prefers-reduced-motion:reduce){
-  .blink,.usb.glow video{animation:none !important}
-  .usb{opacity:.95 !important; transition:none !important}
+  .blink{animation:none!important}
+  .blink-2026{animation:none!important; text-shadow:none!important}
+  .pulse-flash{animation:none!important}
 }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <pre id="out"></pre>
+  <div class="wrap">
+    <pre id="out"></pre>
 
-    <!-- USB as MP4 loop -->
-    <div id="usb" class="usb">
-      <video src="usb.mp4" muted loop playsinline autoplay></video>
-    </div>
-  </div>
+    <!-- USB starts as MP4; after two loops, swaps to PNG automatically -->
+    <div id="usb" class="usb">
+      <video id="usbvid" src="usb.mp4" muted playsinline autoplay></video>
+    </div>
+  </div>
 
 <script>
-/* Sequence per your spec */
+/* Sequence & settings */
+const SPEED = 20; // ms per char
+
 const LINES = [
-  "> searching static…",                                   // shows alone w/ blink for 2.5s
-  "a pulse hums faintly beneath the noise",                // then reveal this
-  "",                                                      // blank line
-  "> status : \u0394- LOST SP//ARK_01",                    // with trailing blinking cursor
-  "> signal : sub-bass residue",                           // with trailing blinking cursor
-  "> bpm : unknown",                                       // with trailing blinking cursor
-  "next transmission : march 2026"                         // date blinks red
-];
+  "> searching static…",                        // 0: type out
+  "",                                           // 1: blank line (before the pulse line)
+  "a pulse hums faintly beneath the noise",     // 2: pulse line (flash once after typing)
+  "",                                           // 3: blank line (after the pulse line)
+  "> status : \\u0394- LOST SP//ARK_01",        // 4
+  "> signal : sub-bass residue",                // 5
+  "> bpm : unknown",                            // 6
+  "next transmission : march 2026"              // 7 (transform to #next_transmission + blinking date)
+].map(s=>s.replace("\\u0394","Δ"));
 
 const out = document.getElementById("out");
-const usb = document.getElementById("usb");
 
-/* type a line (optional cursor at the end) */
-function typeLine(text,{speed=30,pauseAfter=0,showCursor=false}={}){
-  return new Promise(res=>{
-    const line=document.createElement("div");
-    const span=document.createElement("span");
-    line.appendChild(span);
-    let cursor=null;
-    if(showCursor){
-      cursor=document.createElement("span");
-      cursor.className="cursor blink";
-      cursor.textContent="▮";
-      line.appendChild(cursor);
-    }
-    out.appendChild(line);
-    let i=0;
-    (function tick(){
-      span.textContent = text.slice(0,++i);
-      if(i<text.length) setTimeout(tick,speed); else setTimeout(res,pauseAfter);
-    })();
-  });
+/* Type a line with optional cursor */
+function typeLine(text,{speed=SPEED,pauseAfter=0,showCursor=false,flashAfter=false}={}){
+  return new Promise(res=>{
+    const line=document.createElement("div");
+    const span=document.createElement("span");
+    line.appendChild(span);
+    let cursor=null;
+    if(showCursor){
+      cursor=document.createElement("span");
+      cursor.className="cursor blink";
+      cursor.textContent="▮";
+      line.appendChild(cursor);
+    }
+    out.appendChild(line);
+
+    let i=0;
+    (function tick(){
+      // Inject special styling on-the-fly
+      let partial = text.slice(0,++i);
+      span.innerHTML = partial
+        .replace(/^#next_transmission/i,'<span class="tag-ntx">#next_transmission</span>')
+        .replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
+      if(i<text.length){
+        setTimeout(tick,speed);
+      } else {
+        // optional one-time glow for the pulse line after it completes
+        if(flashAfter){
+          span.classList.add('pulse-flash');
+          setTimeout(()=>res(), pauseAfter);
+        } else {
+          setTimeout(res, pauseAfter);
+        }
+      }
+    })();
+  });
 }
 
+/* Render sequence */
 (async function run(){
-  // 1) Show "searching static…" with a blinking cursor for 2.5s (no reveal yet)
-  {
-    const line=document.createElement("div");
-    const span=document.createElement("span");
-    span.textContent = LINES[0];
-    const cursor=document.createElement("span");
-    cursor.className="cursor blink";
-    cursor.textContent="▮";
-    line.appendChild(span); line.appendChild(cursor); out.appendChild(line);
-    await new Promise(r=>setTimeout(r,2500));
-  }
+  // 0) "searching static…" types out with a blinking cursor
+  await typeLine(LINES[0], {showCursor:true, pauseAfter:300});
 
-  // 2) Then reveal the rest (typed)
-  await typeLine(LINES[1], {speed:30, pauseAfter:120, showCursor:false});
-  await typeLine(LINES[2], {speed:30, pauseAfter:0, showCursor:false}); // blank spacer
+  // 1) blank line (before pulse)
+  await typeLine(LINES[1], {showCursor:false, pauseAfter:0});
 
-  // Three system lines, each ending with a blinking cursor
-  await typeLine(LINES[3], {speed:30, pauseAfter:60, showCursor:true});
-  await typeLine(LINES[4], {speed:30, pauseAfter:60, showCursor:true});
-  await typeLine(LINES[5], {speed:30, pauseAfter:200, showCursor:true});
+  // 2) pulse line (no cursor, then flash once)
+  await typeLine(LINES[2], {showCursor:false, pauseAfter:250, flashAfter:true});
 
-  // Final line: blink "march 2026" in red
-  const last=document.createElement("div");
-  out.appendChild(last);
-  last.innerHTML = LINES[6].replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
+  // 3) blank line (after pulse)
+  await typeLine(LINES[3], {showCursor:false, pauseAfter:0});
 
-  // fade in USB loop
-  usb.classList.add("glow");
-  usb.style.opacity="1";
+  // 4–6) system lines each with a trailing blinking cursor
+  await typeLine(LINES[4], {showCursor:true, pauseAfter:60});
+  await typeLine(LINES[5], {showCursor:true, pauseAfter:60});
+  await typeLine(LINES[6], {showCursor:true, pauseAfter:160});
+
+  // 7) final line: convert "next transmission :" -> "#next_transmission :" and blink date
+  const final = document.createElement("div"); out.appendChild(final);
+  final.innerHTML = LINES[7]
+    .replace(/^\s*next transmission\s*:/i,'<span class="tag-ntx">#next_transmission</span> : ')
+    .replace(/march 2026/gi,'<span class="blink-2026">march 2026</span>');
+})();
+</script>
+
+<script>
+/* USB video: play exactly twice, then swap to usb.png */
+(function(){
+  const container = document.getElementById('usb');
+  const vid = document.getElementById('usbvid');
+  if(!vid) return;
+
+  let plays = 0;
+  // Ensure autoplay on iOS: already muted + playsinline
+  vid.addEventListener('ended', () => {
+    plays++;
+    if(plays < 2){
+      // replay manually (no loop attribute)
+      try { vid.currentTime = 0; vid.play(); } catch(e){}
+    } else {
+      // swap to PNG
+      const img = new Image();
+      img.src = 'usb.png';
+      img.alt = 'recovered usb (still)';
+      img.onload = () => {
+        container.replaceChildren(img);
+      };
+      // if png missing, just pause on last frame
+      setTimeout(() => { if (container.firstChild !== img) container.replaceChildren(img); }, 500);
+    }
+  }, {once:false});
 })();
 </script>
 </body>
