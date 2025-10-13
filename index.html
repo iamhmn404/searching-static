@@ -7,35 +7,49 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <style>
-:root{--bg:#000;--fg:#fff;--ntx:#7EE7FF;--logw:0px;--idw:0px;}
+:root{
+  --bg:#000; --fg:#fff; --ntx:#7EE7FF;
+  --logw:0px; --idw:0px;
+  /* >>> alignment controls <<< */
+  --text-offset: 5vw;   /* move TEXT only (right = larger, left = smaller) */
+  --usb-offset:  0px;   /* move USB only (right = positive, left = negative) */
+}
 
 html,body{height:100%}
 body{
-  margin:0;background:#000;color:#fff;
+  margin:0;background:var(--bg);color:var(--fg);
   font-family:"Share Tech Mono","Courier New",monospace;
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;padding:24px;
 }
-/* Cinematic layout: slightly narrower & nudged right */
-.wrap {
+
+/* Layout: text + usb are independent children you can offset separately */
+.wrap{
   width:min(88vw,760px);
   display:grid;
+  grid-template-rows:auto auto;
   gap:28px;
   justify-items:start;
   align-items:start;
   text-align:left;
-  padding-left:7.5vw; /* <-- add this */
 }
-pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
+
+/* TEXT block (pre) — offset ONLY this to align under USB edge */
+#out{
+  margin-left: var(--text-offset);
+  max-width:64ch;
+  font-size:clamp(14px,2.6vw,19px);
+  line-height:1.6;
+}
 
 .cursor{display:inline-block;width:.65ch}
 .blink{animation:blink .55s step-end infinite}
 @keyframes blink{50%{opacity:0}}
 
-/* tag + date (violet/magenta, same rhythm) */
+/* tag + date (violet/magenta, same rhythm as log/USB) */
 .tag{color:var(--ntx);text-shadow:0 0 6px rgba(126,231,255,.9),0 0 14px rgba(126,231,255,.7)}
 .date{
-  color:#e07aff; /* base text tint */
+  color:#e07aff; /* base tint */
   animation:pulseDate 3.8s ease-in-out infinite;
 }
 
@@ -61,7 +75,7 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
       0 0 46px rgba(178,102,255,.88);
   }
 }
-/* same rhythm, but more magenta/violent and brighter */
+/* brighter magenta-violet pulse for date (same rhythm) */
 @keyframes pulseDate{
   0%,100%{
     text-shadow:
@@ -78,27 +92,24 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
   }
 }
 
-/* --- Layout for log & id lines (wrapping-safe) --- */
-.logline,.idline{position:relative;max-width:64ch;min-height:1.6em}
-.logline .prefix,.idline .prefix{position:absolute;left:0;top:0;white-space:pre;}
-.logline .content{
+/* Log & ID rows with guaranteed colons and wrapping */
+.line{position:relative;max-width:64ch;min-height:1.6em}
+.line .prefix{position:absolute;left:0;top:0;white-space:pre;}
+.line .content{
   display:inline;white-space:pre-wrap;overflow-wrap:break-word;
-  margin-left:var(--logw);vertical-align:top;
+  margin-left:var(--ml);vertical-align:top;
+}
+.line.log .content{
   will-change:text-shadow;animation:pulseText 3.8s ease-in-out infinite;
 }
-.idline .content{
-  display:inline;white-space:pre-wrap;overflow-wrap:break-word;
-  margin-left:var(--idw);vertical-align:top;
-}
-.logline .cur,.idline .cur{display:inline}
 
-/* USB — align left with text (no X shift), same breathing */
+/* USB — align independently of text using --usb-offset */
 .usb{
   position:relative;width:min(75vw,520px);aspect-ratio:16/9;
   opacity:0;transition:opacity 2.5s ease-in;
-  /* REMOVE translateX so its left edge aligns with text */
   transform:translateY(-8%);
   margin-top:-14px;
+  margin-left: var(--usb-offset);     /* <- move stick left/right independently */
   justify-self:start;
   animation:pulseUSB 3.8s ease-in-out infinite paused;
 }
@@ -106,7 +117,7 @@ pre{margin:0;max-width:64ch;font-size:clamp(14px,2.6vw,19px);line-height:1.6}
 .usb img{width:100%;height:100%;object-fit:contain;display:block}
 
 @media (prefers-reduced-motion:reduce){
-  .blink,.date,.logline .content,.usb{animation:none!important;text-shadow:none!important}
+  .blink,.date,.line.log .content,.usb{animation:none!important;text-shadow:none!important}
 }
 </style>
 </head>
@@ -157,10 +168,10 @@ const SEARCH_PAUSE=1200, BREATH=200;
 const out=document.getElementById("out"), usb=document.getElementById("usb");
 const rnd=(a,b)=>Math.random()*(b-a)+a, wait=ms=>new Promise(r=>setTimeout(r,ms));
 
-/* ---------- measure prefix widths for exact wrap ---------- */
-function measure(text){
+/* measure a text prefix to compute margin-left */
+function measurePrefix(prefixText){
   const probe=document.createElement("span");
-  probe.textContent=text;
+  probe.textContent=prefixText;
   probe.style.position="absolute";probe.style.visibility="hidden";probe.style.whiteSpace="pre";
   probe.style.fontFamily=getComputedStyle(out).fontFamily;
   probe.style.fontSize=getComputedStyle(out).fontSize;
@@ -170,8 +181,36 @@ function measure(text){
   return w;
 }
 
-/* ---------- TYPE HELPERS ---------- */
-async function typeSimpleLine(text, speed=SPEED_BASE){
+/* create a line with fixed prefix + typing content */
+async function typeFixedLine(prefixText, contentText, {pulse=false}={}){
+  const row=document.createElement("div"); row.className="line"+(pulse?" log":"");
+  const prefix=document.createElement("span"); prefix.className="prefix"; prefix.textContent=prefixText;
+  const content=document.createElement("span"); content.className="content";
+  const cur=document.createElement("span"); cur.className="cursor blink"; cur.textContent="▮";
+
+  /* set content margin-left based on measured prefix width */
+  const ml = measurePrefix(prefixText);
+  content.style.setProperty("--ml", ml+"px");
+
+  row.appendChild(prefix); row.appendChild(content); row.appendChild(cur);
+  out.appendChild(row);
+
+  const t = contentText;
+  const halfway=Math.floor(t.length/2); let paused=false;
+  for(let i=0;i<t.length;i++){
+    content.textContent=t.slice(0,i+1);
+    let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
+    if(pulse){ /* stutter + mid pause only on log line */
+      if(Math.random()<STUTTER_PROB) d+=Math.floor(rnd(30,STUTTER_MAX));
+      const ch=t[i]; if(ch===','||ch==='—') d+=Math.floor(rnd(80,180));
+      if(!paused && i>=halfway){ d+=900; paused=true; }
+    }
+    await wait(d);
+  }
+  await wait(BREATH);
+}
+
+async function typeSimple(text, speed=SPEED_BASE){
   const line=document.createElement("div");
   const span=document.createElement("span");
   const cur=document.createElement("span"); cur.className="cursor blink"; cur.textContent="▮";
@@ -185,66 +224,21 @@ async function typeSimpleLine(text, speed=SPEED_BASE){
   await wait(BREATH);
 }
 
-async function typePrefixed(contentText, kind){ // kind = "log" | "id"
-  const row=document.createElement("div");
-  row.className = kind==="log" ? "logline" : "idline";
-  const prefix=document.createElement("span"); prefix.className="prefix";
-  const content=document.createElement("span"); content.className="content";
-  const cur=document.createElement("span"); cur.className="cur cursor blink"; cur.textContent="▮";
-
-  // Hard-coded prefixes so the colon is guaranteed
-  const pText = (kind==="log") ? "> log : " : "> id  : ";
-  prefix.textContent = pText;
-
-  // set left margin by measuring once (prevents missing colons / mis-wraps)
-  const w = measure(pText);
-  document.documentElement.style.setProperty(kind==="log"?"--logw":"--idw", w+"px");
-
-  row.appendChild(prefix); row.appendChild(content); row.appendChild(cur); out.appendChild(row);
-
-  // typing loop (+ mid pause on log)
-  const t = contentText;
-  const halfway=Math.floor(t.length/2); let paused=false;
-  for(let i=0;i<t.length;i++){
-    content.textContent=t.slice(0,i+1);
-    let d=Math.floor(rnd(SPEED_BASE-JITTER,SPEED_BASE+JITTER));
-    if(kind==="log"){
-      if(Math.random()<STUTTER_PROB) d+=Math.floor(rnd(30,STUTTER_MAX));
-      const ch=t[i]; if(ch===','||ch==='—') d+=Math.floor(rnd(80,180));
-      if(!paused && i>=halfway){ d+=900; paused=true; }
-    }
-    await wait(d);
-  }
-  await wait(BREATH);
-  if(kind==="log") lastLogContent = content;
-}
-
-let lastLogContent=null;
-
 /* ---------- RUN ---------- */
 (async function run(){
-  // sequence
-  await typeSimpleLine("> searching static…");
+  await typeSimple("> searching static…");
   await wait(SEARCH_PAUSE);
 
   const log = LOGS[Math.floor(Math.random()*LOGS.length)];
   const id  = IDS[Math.floor(Math.random()*IDS.length)];
   const status = STATUS[Math.floor(Math.random()*STATUS.length)];
 
-  await typePrefixed(log, "log");
-  await typePrefixed(id, "id");
-  await typeSimpleLine(status);
-  await typeSimpleLine(ENDING, SPEED_END); // slower for suspense
+  await typeFixedLine("> log : ", log,   {pulse:true});
+  await typeFixedLine("> id  : ", id,    {pulse:false});
+  await typeSimple(status);
+  await typeSimple(ENDING, SPEED_END);
 
-  // USB fade & sync
-  setTimeout(()=>{
-    usb.classList.add("visible");
-    if(lastLogContent){
-      lastLogContent.style.animation="none";
-      void lastLogContent.offsetWidth;
-      lastLogContent.style.animation="pulseText 3.8s ease-in-out infinite";
-    }
-  },500);
+  setTimeout(()=>{ usb.classList.add("visible"); }, 500);
 })();
 </script>
 </body>
