@@ -231,11 +231,12 @@ async function typeSimple(text, speed=SPEED_BASE){
   line.appendChild(span); line.appendChild(cur); out.appendChild(line);
   for(let i=0;i<text.length;i++){
     span.innerHTML=text.slice(0,i+1)
-     // NEW: glow any hashtag (e.g. #the_hum, #next_transmission)
-      .replace(/>([a-z0-9_]+)/gi, '<span class="tag">#$1</span>')
-      .replace(/\breturns\b/gi, '<span class="tag">returns</span>')
-      // keep March date glow
-      .replace(/march 2026/gi, '<span class="date">march 2026</span>');
+     span.innerHTML = text.slice(0,i+1)
+  // Glow any >token (e.g. >the_hum, >status)
+  .replace(/>([a-z0-9_]+)/gi, '<span class="tag">&gt;$1</span>')
+  .replace(/\breturns\b/gi, '<span class="tag">returns</span>')
+  // keep March date glow
+  .replace(/march 2026/gi, '<span class="date">march 2026</span>');
     await wait(Math.floor(rnd(speed-JITTER,speed+JITTER)));
   }
   await wait(BREATH);
