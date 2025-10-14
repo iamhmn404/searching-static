@@ -233,6 +233,7 @@ async function typeSimple(text, speed=SPEED_BASE){
     span.innerHTML=text.slice(0,i+1)
      // NEW: glow any hashtag (e.g. #the_hum, #next_transmission)
       .replace(/#([a-z0-9_]+)/gi, '<span class="tag">#$1</span>')
+      .replace(/\breturns\b/gi, '<span class="tag">returns</span>')
       // keep March date glow
       .replace(/march 2026/gi, '<span class="date">march 2026</span>');
     await wait(Math.floor(rnd(speed-JITTER,speed+JITTER)));
