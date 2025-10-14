@@ -230,13 +230,11 @@ async function typeSimple(text, speed=SPEED_BASE){
   const cur=document.createElement("span"); cur.className="cursor blink"; cur.textContent="▮";
   line.appendChild(span); line.appendChild(cur); out.appendChild(line);
   for(let i=0;i<text.length;i++){
-    span.innerHTML=text.slice(0,i+1)
-     span.innerHTML = text.slice(0,i+1)
-  // Glow any >token (e.g. >the_hum, >status)
-  .replace(/>([a-z0-9_]+)/gi, '<span class="tag">&gt;$1</span>')
+   span.innerHTML = text.slice(0,i+1)
+  // Glow any "> token" — allows spaces after > and multi-word tokens
+  .replace(/>\s*([a-z0-9_]+(?:\s+[a-z0-9_]+)*)/gi, '<span class="tag">&gt; $1</span>')
   .replace(/\breturns\b/gi, '<span class="tag">returns</span>')
-  // keep March date glow
-  .replace(/march 2026/gi, '<span class="date">march 2026</span>');
+  .replace(/march\s+2026/gi, '<span class="date">march 2026</span>');
     await wait(Math.floor(rnd(speed-JITTER,speed+JITTER)));
   }
   await wait(BREATH);
