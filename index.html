@@ -223,23 +223,30 @@ async function typeFixedLine(prefixText, contentText, {pulse=false}={}){
   }
   await wait(BREATH);
 }
-
-async function typeSimple(text, speed=SPEED_BASE){
-  const line=document.createElement("div");
-  const span=document.createElement("span");
-  const cur=document.createElement("span"); cur.className="cursor blink"; cur.textContent="▮";
+async function typeSimple(text, speed = SPEED_BASE){
+  const line = document.createElement("div");
+  const span = document.createElement("span");
+  const cur  = document.createElement("span"); 
+  cur.className = "cursor blink"; 
+  cur.textContent = "▮";
   line.appendChild(span); line.appendChild(cur); out.appendChild(line);
-  for(let i=0;i<text.length;i++){
-   span.innerHTML = text.slice(0,i+1)
-  // Glow any "> token" — allows spaces after > and multi-word tokens
-  .replace(/>\s*([a-z0-9_]+(?:\s+[a-z0-9_]+)*)/gi, '<span class="tag">&gt; $1</span>')
-  .replace(/\breturns\b/gi, '<span class="tag">returns</span>')
-  .replace(/march\s+2026/gi, '<span class="date">march 2026</span>');
-    await wait(Math.floor(rnd(speed-JITTER,speed+JITTER)));
+
+  for (let i = 0; i < text.length; i++) {
+    const partial = text.slice(0, i + 1);
+
+    span.innerHTML = partial
+      // ONLY glow the final callout line:
+      // - `> the_hum` or `> the_hum returns`
+      // - keep backward compatibility for `#next_transmission`
+      .replace(/>\s*(the_hum(?:\s+returns)?)/gi, '<span class="tag">&gt; $1</span>')
+      .replace(/#\s*next_transmission/gi, '<span class="tag">#next_transmission</span>')
+      // keep March date glow
+      .replace(/march\s+2026/gi, '<span class="date">march 2026</span>');
+
+    await wait(Math.floor(rnd(speed - JITTER, speed + JITTER)));
   }
   await wait(BREATH);
 }
-
 /* ---------- RUN ---------- */
 (async function run(){
   await typeSimple("> searching static…");
