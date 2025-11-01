@@ -7,6 +7,10 @@
     {
       "id": "xyz789",
       "videoFile": "video2.mov"
+    },
+    {
+      "id": "xyz790",
+      "videoFile": "wavecatcher.mov"
     }
   ]
 }
