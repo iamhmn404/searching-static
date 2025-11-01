@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Review</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            padding-bottom: 40px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #000;
+            aspect-ratio: 9 / 16;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+        }
+
+        .play-pause-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .play-pause-overlay.show {
+            opacity: 1;
+        }
+
+        .play-pause-overlay svg {
+            width: 40px;
+            height: 40px;
+            fill: #fff;
+        }
+
+        .comments-section {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 0 16px;
+        }
+
+        .comments-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        .comment-form {
+            margin-bottom: 24px;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #555;
+        }
+
+        .comment-input::placeholder {
+            color: #666;
+        }
+
+        .submit-btn {
+            margin-top: 8px;
+            padding: 10px 20px;
+            background: #0095f6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .submit-btn:hover {
+            background: #0084e0;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .comment {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .comment-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #e0e0e0;
+        }
+
+        .no-comments {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            padding: 40px 0;
+        }
+
+        @media (max-width: 500px) {
+            .video-container {
+                max-width: 100vw;
+            }
+            
+            video {
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <video id="video" playsinline autoplay muted loop>
+            <source src="../videos/lostspark.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="play-pause-overlay" id="overlay">
+            <svg id="play-icon" viewBox="0 0 24 24" style="display: none;">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="pause-icon" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="comments-section">
+        <div class="comments-header">Comments</div>
+        
+        <div class="comment-form">
+            <textarea 
+                class="comment-input" 
+                id="commentInput" 
+                placeholder="Add a comment..."
+            ></textarea>
+            <button class="submit-btn" id="submitBtn">Post Comment</button>
+        </div>
+
+        <div class="comments-list" id="commentsList">
+            <div class="no-comments">No comments yet. Be the first to comment!</div>
+        </div>
+
+        <div id="navigation" style="margin-top: 32px; display: none;">
+            <button class="submit-btn" id="nextBtn" style="width: 100%; background: #262626;">Next Video →</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('overlay');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const commentInput = document.getElementById('commentInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const commentsList = document.getElementById('commentsList');
+
+        let overlayTimeout;
+
+        // Video play/pause on tap
+        video.addEventListener('click', function() {
+            if (video.paused) {
+                video.play();
+                showOverlay(false);
+            } else {
+                video.pause();
+                showOverlay(true);
+            }
+        });
+
+        function showOverlay(isPaused) {
+            clearTimeout(overlayTimeout);
+            
+            if (isPaused) {
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+            } else {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+            }
+            
+            overlay.classList.add('show');
+            overlayTimeout = setTimeout(() => {
+                overlay.classList.remove('show');
+            }, 500);
+        }
+
+        // Unmute on first interaction
+        video.addEventListener('click', function unmute() {
+            video.muted = false;
+            video.removeEventListener('click', unmute);
+        }, { once: true });
+
+        // Comments functionality
+        const STORAGE_KEY = 'video_comments';
+
+        function loadComments() {
+            const comments = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            renderComments(comments);
+        }
+
+        function saveComment(text) {
+            const comments = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            const newComment = {
+                id: Date.now(),
+                text: text,
+                author: 'Reviewer',
+                timestamp: new Date().toISOString()
+            };
+            comments.unshift(newComment);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+            renderComments(comments);
+        }
+
+        function renderComments(comments) {
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
+                return;
+            }
+
+            commentsList.innerHTML = comments.map(comment => {
+                const date = new Date(comment.timestamp);
+                const timeAgo = getTimeAgo(date);
+                return `
+                    <div class="comment">
+                        <div class="comment-author">${comment.author}</div>
+                        <div class="comment-time">${timeAgo}</div>
+                        <div class="comment-text">${escapeHtml(comment.text)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        submitBtn.addEventListener('click', function() {
+            const text = commentInput.value.trim();
+            if (text) {
+                saveComment(text);
+                commentInput.value = '';
+            }
+        });
+
+        commentInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                submitBtn.click();
+            }
+        });
+
+        // Load comments on page load
+        loadComments();
+
+        // Navigation functionality
+        const nextBtn = document.getElementById('nextBtn');
+        const navigation = document.getElementById('navigation');
+
+        async function loadNavigation() {
+            try {
+                const response = await fetch('/r/videos.json');
+                const data = await response.json();
+                const videos = data.videos;
+                
+                // Get current path (e.g., "/r/abc123/")
+                const currentPath = window.location.pathname.replace(/\/$/, '');
+                
+                // Find current video index
+                const currentIndex = videos.findIndex(v => currentPath.endsWith(v.id));
+                
+                if (currentIndex !== -1 && currentIndex < videos.length - 1) {
+                    // There's a next video
+                    navigation.style.display = 'block';
+                    const nextVideo = videos[currentIndex + 1];
+                    
+                    nextBtn.onclick = () => {
+                        window.location.href = `/r/${nextVideo.id}/`;
+                    };
+                }
+            } catch (error) {
+                console.log('Navigation not available');
+            }
+        }
+
+        loadNavigation();
+    </script>
+</body>
+</html>
