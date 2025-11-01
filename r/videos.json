@@ -11,6 +11,15 @@
     {
       "id": "xyz790",
       "videoFile": "wavecatcher.mov"
+    },
+    {
+      "id": "abc791",
+      "videoFile": "decoder_a.mov"
+    },
+    {
+      "id": "abc792",
+      "videoFile": "decoder_b.mov"
     }
   ]
 }
+ 
