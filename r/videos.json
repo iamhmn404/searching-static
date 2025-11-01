@@ -1,1 +1,8 @@
-
+{
+  "videos": [
+    {
+      "id": "abc123",
+      "videoFile": "video1.mov"
+    }
+  ]
+}
