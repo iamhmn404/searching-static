@@ -3,6 +3,9 @@
     {
       "id": "abc123",
       "videoFile": "video1.mov"
-    }
+    },
+    {
+      "id": "xyz789",
+      "videoFile": "video2.mov"
   ]
 }
